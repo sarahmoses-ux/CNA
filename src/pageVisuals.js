@@ -1,0 +1,16 @@
+export const pageVisuals = {
+  '/programs': { src: '/images/classroom.webp', alt: 'Healthcare learners studying in a classroom', tone: 'pine' },
+  '/about': { src: '/images/care-team.webp', alt: 'Healthcare caregivers pictured together', tone: 'forest' },
+  '/admissions': { src: '/images/cna-3-1.webp', alt: 'Healthcare students preparing for classroom learning', tone: 'olive' },
+  '/resources': { src: '/images/healthcare-unique-3.jpg', alt: 'An anatomical model used for healthcare study', tone: 'forest' },
+  '/contact': { src: '/images/healthcare-unique-0.jpg', alt: 'A healthcare professional using a phone', tone: 'pine' },
+  '/register': { src: '/images/cna-4-1.webp', alt: 'Healthcare trainees learning together', tone: 'olive' },
+  '/login': { src: '/images/healthcare-unique-2.jpg', alt: 'A stethoscope arranged on a desk', tone: 'pine' },
+  '/dashboard': { src: '/images/healthcare-unique-4.jpg', alt: 'Beds and equipment in a healthcare room', tone: 'forest' },
+  '/programs/certified-nurse-aide': { src: '/images/program-cna.webp', illustration: true, alt: 'Illustration of a nurse aide student practicing bedside communication', tone: 'forest' },
+  '/programs/cna-hha-deeming': { src: '/images/program-combined.webp', illustration: true, alt: 'Illustration of healthcare trainees practicing with a wheelchair', tone: 'pine' },
+  '/programs/home-health-aide-deeming': { src: '/images/program-hha.webp', illustration: true, alt: 'Illustration of a home health aide speaking with an older adult', tone: 'olive' },
+  '/programs/certified-medication-aide': { src: '/images/program-cma.webp', illustration: true, alt: 'Illustration of medication aide students reviewing training materials', tone: 'forest' },
+  '/programs/acma-diabetes-insulin': { src: '/images/cna-5-1.webp', alt: 'Students participating in healthcare training', tone: 'olive' },
+  '/programs/acma-enteral-respiratory': { src: '/images/cna-6-1.webp', alt: 'Learners studying healthcare skills in class', tone: 'pine' },
+};

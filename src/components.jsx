@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, CalendarDays, Phone, Menu, X, MapPin, HeartPulse, Users, House, Pill, Droplets, Wind, BookOpen, HeartHandshake } from 'lucide-react';
 import { academyContact, programPhotos, programs, services } from './data';
 import { SocialLinks } from './ContentSections';
+import { pageVisuals } from './pageVisuals';
 export function Icon({ type, ...props }) {
   const Component = { care: HeartPulse, people: Users, home: House, medication: Pill, diabetes: Droplets, respiratory: Wind, book: BookOpen, support: HeartHandshake }[type] || HeartPulse;
   return <Component aria-hidden="true" {...props} />;
@@ -41,7 +42,9 @@ export function Footer() {
   </div><div className="container footer-bottom"><span>Copyright {copyrightYear} CNA Training Academy. All rights reserved.</span><span>Education with care. Care with confidence.</span></div></footer>;
 }
 export function PageHeading({ eyebrow, title, description, children }) {
-  return <section className="page-heading"><div className="container"><div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span>{eyebrow}</span></div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="page-description">{description}</p>{children}</div></section>;
+  const { pathname } = useLocation();
+  const visual = pageVisuals[pathname];
+  return <section className={`page-heading ${visual ? 'page-heading-visual' : ''}`} data-tone={visual?.tone}><div className="container page-heading-layout"><div className="page-heading-copy"><div className="breadcrumb"><Link to="/">Home</Link><span>/</span><span>{eyebrow}</span></div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="page-description">{description}</p>{children}</div>{visual && <div className="page-feature-image"><img src={visual.src} alt={visual.alt} width="800" height="650" fetchPriority="high" /><span className="page-image-caption">{visual.illustration ? "TRAINING ILLUSTRATION" : "CNA TRAINING ACADEMY"} <span>LEARN. PRACTICE. CARE.</span></span></div>}</div></section>;
 }
 export function ProgramCard({ program, index }) {
   return <article className="program-card"><div className="program-photo"><img src={programPhotos[program.slug]} alt="" loading="lazy" width="768" height="512" /></div><div className="card-top"><span className="icon-tile"><Icon type={program.icon} size={25} /></span><span className="program-code">{program.code}</span></div><span className="card-category">{program.category}</span><h3><Link to={`/programs/${program.slug}`}>{program.name}</Link></h3><p>{program.description}</p><Link className="card-link" to={`/programs/${program.slug}`}>Explore program <ArrowUpRight size={18} aria-hidden="true" /></Link><span className="card-number" aria-hidden="true">0{index + 1}</span></article>;

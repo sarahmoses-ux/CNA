@@ -69,3 +69,7 @@ PNG photos were converted to WebP at quality 85. Below-fold photos load lazily; 
 - Confirm current tuition, payment options, course duration/hours, and the published enrollment schedules, especially the unusually long morning time range on the original pages.
 - A higher-resolution transparent logo would improve sharpness on larger or high-density displays. The existing 122 × 43 logo is reused at its original size.
 - Hosting an inquiry form locally would require an approved contact endpoint. The existing academy form, email, and phone actions are accessible now.
+
+## Page imagery and emerald theme
+
+Each primary route and each program detail page uses a distinct featured image, mapped in `src/pageVisuals.js`. The homepage retains its own team photograph. The four `program-cna`, `program-combined`, `program-hha`, and `program-cma` WebP assets are AI-generated illustrative scenes; they do not depict academy facilities, students, instructors, or patients. Image descriptions identify them as illustrations. The remaining route images are existing project photographs. No generated image is used as a student testimonial or as evidence of actual facilities.

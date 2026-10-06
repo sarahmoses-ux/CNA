@@ -211,3 +211,100 @@ body,.programs-section,.news-section { background:var(--ivory); }
 @media(prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
 }
+
+/* A leading emerald palette, with distinct photographic page introductions. */
+:root { background:#133c33; color:#dce7d9; --navy:#f0e6c9; --teal:#efd49a; --border:#557664; }
+body,main,.section,.programs-section,.news-section { background:#173f35; color:#dce7d9; }
+h1,h2,h3 { color:#f0e6c9; }
+header { background:#dbe3ce; border-color:#b4c3a8; color:#173f35; }
+.navigation .brand-type,.navigation nav { color:#173f35; }
+.navigation nav>a.active:not(.button),.navigation nav>a:hover { color:#205e47; }
+.navigation nav>a.active:not(.button):after { background:#205e47; }
+.menu-toggle { background:#dbe3ce; color:#173f35; border-color:#7b937e; }
+.utility-bar { background:#0c2a22; }
+.page-heading { background:#123a31; border-color:#446450; }
+.page-heading[data-tone="pine"] { background:#163b3a; }
+.page-heading[data-tone="olive"] { background:#364331; }
+.page-heading-layout { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; gap:60px; }
+.page-heading:not(.page-heading-visual) .page-heading-layout { display:block; }
+.page-heading-visual { padding:44px 0 56px; }
+.page-heading h1 { color:#f3ead2; font-size:clamp(38px,4.3vw,62px); }
+.page-heading .eyebrow,.breadcrumb,.page-description { color:#dce7d9; }
+.page-heading .eyebrow { color:#efd49a; }
+.page-heading .breadcrumb { margin-bottom:38px; }
+.page-feature-image { position:relative; overflow:hidden; border-radius:16px 16px 52px 16px; border:1px solid #c0c9a860; box-shadow:0 20px 50px #051b1925; }
+.page-feature-image img { width:100%; height:420px; object-fit:cover; }
+.page-image-caption { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-between; padding:17px 20px; background:#0f332bea; color:#f1deab; font-size:9px; letter-spacing:1.1px !important; gap:10px; }
+.page-image-caption>span { color:#e3e9d9; }
+.heading-tag { background:#dbe3ce; color:#173f35; }
+.section-heading .eyebrow,.eyebrow,.text-link,.card-link { color:#efd49a; }
+.intro-strip { background:#bac9ab; border-color:#92a78c; }
+.strip-grid span,.strip-grid svg { color:#173f35; }
+.strip-grid strong { color:#344e39; }
+.strip-grid>div:nth-child(n) { border-color:#8da081; }
+.program-card,.program-card:nth-child(n),.programs-section .program-card,.experiences-grid article,.account-form,.dashboard-card { background:#dbe3ce; border-color:#c2cfb4; color:#344d3b; box-shadow:0 12px 30px #071e1b18; }
+.program-card h3,.experiences-grid h3,.account-form h2,.dashboard-card h3 { color:#173f35; }
+.program-card .card-link,.program-card .eyebrow,.account-form .text-link,.dashboard-card .eyebrow { color:#22583f; }
+.program-card:hover { background:#dbe3ce; }
+.program-card .icon-tile,.program-card:nth-child(n) .icon-tile { background:#b9caac; color:#173f35; }
+.program-code { background:#c7d5ba; color:#294934; }
+.card-category { color:#344d3b; }
+.card-link { border-color:#a9bba0; }
+.learning-section,.soft-background { background:#344d3a; }
+.learning-point { border-color:#728567; }
+.learning-point>span { color:#efd49a; border-color:#9baa87; }
+.learning-point h3 { color:#f0e6c9; }
+.academy-intro { background:#0d3028; }
+.experiences-section { background:#294937; }
+.experiences-section .eyebrow,.soft-background .eyebrow { color:#efd49a; }
+.experiences-grid article p,.experiences-grid article strong { color:#344d3b; }
+.experiences-grid article>div { border-color:#aebfa3; }
+.experiences-grid article>div>span { color:#3f5942; }
+.faq-section { background:#203f34; }
+.faq-list details { border-color:#667b60; }
+.faq-list summary { color:#f0e6c9; }
+.resource-callout { background:#344d3a; }
+.class-schedule,.notice,.enrollment-card,.admissions-aside,.visit-content { background:#bac9ab; color:#294833; border-color:#8ea884; }
+.class-schedule h3,.notice h3,.enrollment-card h2,.admissions-aside h2,.admissions-aside h3,.visit-content h2 { color:#153d2e; }
+.class-schedule .text-link,.enrollment-card .text-link,.enrollment-card .eyebrow,.admissions-aside .eyebrow,.visit-content .eyebrow { color:#214b35; }
+.class-schedule dl>div { border-color:#8da181; }
+.class-schedule dt,.class-schedule dd { color:#294833; }
+.button-primary,.account-form button { background:#20583f; color:#fff; border-color:#20583f; }
+.button-outline { color:#f3e6c8; border-color:#a4b494; }
+.button-outline:hover { color:#173f35; background:#dbe3ce; }
+.account-form .button-outline,.dashboard-card .button-outline,.admissions-aside .button-outline,.enrollment-card .button-outline { color:#173f35; border-color:#688463; }
+.account-form input { background:#eef0df; color:#173f35; border-color:#829b79; }
+.account-form input:focus { background:#f5f3e4; }
+.account-layout .account-form .eyebrow { color:#22583f; }
+.news-grid article .eyebrow,.news-grid article .text-link { color:#efd49a; }
+.news-number { color:#c8d6b9; }
+.values-grid article { border-color:#6d8263; }
+.values-grid svg,.contact-method svg { color:#173f35; }
+.contact-method .icon-tile { background:#bac9ab; }
+.contact-method h3 { color:#f0e6c9; }
+.filter-group button { background:#bac9ab; color:#173f35; border-color:#8fa381; }
+.filter-group button[aria-pressed="true"] { background:#efd49a; color:#173f35; }
+.check-list svg { color:#efd49a; }
+.resource-directory>section:nth-child(n) { border-color:#ba9e60; }
+.resource-directory a { color:#e4e9d6; }
+.resource-directory li { border-color:#668061; }
+.contact-cta { background:#0d3028; }
+footer { background:#09261f; }
+@media(prefers-reduced-motion:no-preference) { .page-feature-image { animation:academy-arrive .9s .18s both; } }
+@media(max-width:800px) {
+ .navigation nav { background:#dbe3ce; color:#173f35; }
+ .page-heading-layout { grid-template-columns:1fr; gap:32px; }
+ .page-feature-image img { height:320px; }
+ .page-heading .breadcrumb { margin-bottom:26px; }
+}
+@media(max-width:600px) {
+ .page-feature-image img { height:260px; }
+ .page-feature-image { border-radius:12px 12px 34px 12px; }
+ .page-image-caption { padding:15px; font-size:8px; }
+ .page-heading-visual { padding-top:30px; }
+}
+
+.notice a:not(.button),.admissions-aside a:not(.button),.visit-content a:not(.button) { color:#214b35; }
+
+.enrollment-phone { color:#214b35; }
+.faq-list summary svg { background:#335542; color:#efd49a; border-radius:50%; }
