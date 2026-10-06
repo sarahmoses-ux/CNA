@@ -11,7 +11,8 @@ export function ClassSchedule() {
 }
 
 export function NewsSection() {
-  return <section className="section news-section"><div className="container"><div className="section-heading"><div><p className="eyebrow">NEWS & IDEAS</p><h2>A little knowledge.<br />A new possibility.</h2></div><a className="text-link" href="https://cnatrainingacademy.net/blog/">All academy news <ArrowUpRight size={18} aria-hidden="true" /></a></div><div className="news-grid">{academyNews.map(([title, href, category], index) => <article key={href}><span className="eyebrow">{category}</span><h3><a href={href}>{title}</a></h3><a className="text-link" href={href}>Read article <ArrowUpRight size={18} aria-hidden="true" /></a><span className="news-number" aria-hidden="true">0{index + 1}</span></article>)}</div></div></section>;
+  const photos = ['/images/cna-3-1.webp', '/images/care-team.webp', '/images/cna-4-1.webp', '/images/cna-6-1.webp'];
+  return <section className="section news-section"><div className="container"><div className="section-heading"><div><p className="eyebrow">NEWS & IDEAS</p><h2>A little knowledge.<br />A new possibility.</h2></div><a className="text-link" href="https://cnatrainingacademy.net/blog/">All academy news <ArrowUpRight size={18} aria-hidden="true" /></a></div><div className="news-grid">{academyNews.map(([title, href, category], index) => <article key={href}><img className="news-photo" src={photos[index]} alt="" width="768" height="512" loading="lazy" /><span className="eyebrow">{category}</span><h3><a href={href}>{title}</a></h3><a className="text-link" href={href}>Read article <ArrowUpRight size={18} aria-hidden="true" /></a><span className="news-number" aria-hidden="true">0{index + 1}</span></article>)}</div></div></section>;
 }
 
 export function StudentExperiences() {

@@ -1,7 +1,7 @@
 export const services = {
-  apply: 'https://cnatraining.falconpad.com/authentication/sign-up',
+  apply: '/register',
   calendar: 'https://cnatraining.falconpad.com/public/program-schedules',
-  login: 'https://cnatraining.falconpad.com/authentication',
+  login: '/login',
   directions: 'https://www.google.com/maps/dir/?api=1&destination=7463+NW+23rd+St+Bethany+OK+73008',
   inquiry: 'https://cnatrainingacademy.net/contact-us/',
   applicationForm: 'https://cnatrainingacademy.net/',
@@ -60,6 +60,14 @@ export const generalRequirements = [
   'A current negative TB test before clinicals.',
   'American Heart Association BLS/CPR certification before clinicals. Ask admissions about CPR class enrollment.',
 ];
+export const programPhotos = {
+  'certified-nurse-aide': '/images/classroom.webp',
+  'cna-hha-deeming': '/images/cna-4-1.webp',
+  'home-health-aide-deeming': '/images/care-team.webp',
+  'certified-medication-aide': '/images/cna-3-1.webp',
+  'acma-diabetes-insulin': '/images/cna-5-1.webp',
+  'acma-enteral-respiratory': '/images/cna-6-1.webp',
+};
 export const programs = [
   { slug: 'certified-nurse-aide', code: 'CNA', name: 'Certified Nurse Aide (CNA)', category: 'Start your career', icon: 'care', description: 'Build a foundation in patient care and prepare for your next step in healthcare.', overview: 'Prepare to assist patients with daily care and support nursing teams. This instructor-led program combines classroom learning, skills lab practice, and clinical experience in a licensed nursing home. Successful completion prepares students for the Oklahoma State Nurse Aide Competency Exam.', requirements: ['At least 16 years old.', 'No prior certification required.'], learning: ['Essential daily care and patient support', 'Classroom instruction and hands-on skills practice', 'Supervised clinical experience in a nursing home'], source: 'certified-nurse-aide' },
   { slug: 'cna-hha-deeming', code: 'CNA / HHA', name: 'CNA/HHA Deeming Program', category: 'Start your career', icon: 'people', description: 'Prepare for care in both nursing facilities and home health settings.', overview: 'Combine foundational nurse aide training with Home Health Aide deeming instruction. Students complete CNA classroom, lab, and nursing home clinical training before continuing into home health skills. Certification depends on successful completion and applicable state examination requirements.', requirements: ['At least 16 years old.', 'No prior certification required.'], learning: ['Resident care, safety, and infection control', 'Skills lab and nursing home clinical training', 'Home health skills to support clients at home'], source: 'cna-hha-deeming-program' },
@@ -72,9 +80,11 @@ export const faqs = [
   ['Can I apply in person?', 'Yes. The academy offers online applications and in-person enrollment. Contact admissions to arrange a visit.'],
   ['Is the training state-approved?', 'The academy identifies its training as approved by the Oklahoma State Department of Health. Contact admissions for current program approval details.'],
   ['Is career support available?', 'The academy offers job-placement support and connections with local healthcare employers. Ask admissions about current services and employment partners.'],
-  ['How do I get started?', 'Explore our programs, check the course calendar, and apply through the academy’s registration portal. Admissions can help you choose a program and confirm eligibility.'],
+  ['How do I get started?', 'Explore our programs, check the course calendar, and create your academy account and contact admissions. Admissions can help you choose a program and confirm eligibility.'],
   ['Do I need healthcare experience?', 'No prior certification is required for CNA or the CNA/HHA program. HHA Deeming and CMA require a current Oklahoma CNA certification. Both advanced ACMA programs require current Oklahoma CNA and CMA certifications.'],
   ['What are the age requirements?', 'The dedicated admissions requirements list a minimum age of 16 for CNA, CNA/HHA, and HHA Deeming, and 18 for the other programs. Additional requirements vary by program.'],
   ['How long is a course, and when does it start?', 'The academy homepage describes most programs as lasting 4-6 weeks, depending on the schedule. Length and training hours vary by program; confirm your specific course with admissions and check the live calendar for available sessions.'],
   ['How much is tuition? Are payment plans available?', 'Admissions can confirm current tuition, included materials, fees, and available payment arrangements. Call (405) 315-1357 before making your enrollment plans.'],
 ];
+
+

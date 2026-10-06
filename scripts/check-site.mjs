@@ -8,7 +8,7 @@ const context = await browser.newContext({ reducedMotion: 'reduce' });
 const page = await context.newPage();
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
-const routes = ['/', '/programs', '/about', '/admissions', '/contact', '/resources', '/programs/certified-nurse-aide', '/programs/cna-hha-deeming', '/programs/home-health-aide-deeming', '/programs/certified-medication-aide', '/programs/acma-diabetes-insulin', '/programs/acma-enteral-respiratory', '/missing-page', '/programs/missing-program'];
+const routes = ['/', '/programs', '/about', '/admissions', '/contact', '/resources', '/register', '/login', '/programs/certified-nurse-aide', '/programs/cna-hha-deeming', '/programs/home-health-aide-deeming', '/programs/certified-medication-aide', '/programs/acma-diabetes-insulin', '/programs/acma-enteral-respiratory', '/missing-page', '/programs/missing-program'];
 fs.mkdirSync('.reference/screenshots', { recursive: true });
 try {
   for (const width of [320, 390, 768, 1440]) {
@@ -54,7 +54,7 @@ try {
   assert.equal(await page.locator('.experiences-grid article').count(), 3, 'Academy-specific published student experiences');
   await page.locator('summary').first().click();
   assert.equal(await page.locator('details[open]').count(), 1);
-  assert.equal(await page.locator('header a').filter({ hasText: 'Student Login' }).getAttribute('href'), 'https://cnatraining.falconpad.com/authentication');
+  assert.equal(await page.locator('header a').filter({ hasText: 'Student Login' }).getAttribute('href'), '/login');
   await page.goto(base + '/contact');
   assert.equal(await page.locator('main a[href="tel:+14057406594"]').count(), 1);
   assert.equal(await page.locator('main a[href="mailto:info@cnatrainingacademy.net"]').count(), 1);
@@ -74,3 +74,4 @@ try {
   assert.deepEqual(errors, []);
   console.log('Passed mobile navigation, Escape, program filtering, FAQs, contact links, and runtime checks.');
 } finally { await browser.close(); }
+

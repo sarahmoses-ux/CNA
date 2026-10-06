@@ -8,12 +8,16 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check:site": "node scripts/check-site.mjs"
+    "check:site": "node scripts/check-site.mjs",
+    "start:api": "node server/start.mjs",
+    "test:accounts": "node --test server/accounts.test.mjs",
+    "check:mongodb": "node scripts/check-mongodb.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",
     "@fontsource-variable/manrope": "^5.3.0",
     "lucide-react": "^1.51.0",
+    "mongodb": "^7.7.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"

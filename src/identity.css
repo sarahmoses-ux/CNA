@@ -313,3 +313,69 @@ footer .social-links a { color: #e0eae3; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+:root { --navy: #153f49; --teal: #006e73; --citron: #ffe37d; --pink: #ffd5ca; --light: #e7f7f4; --border: #cbdedc; }
+.utility-bar, .navigation nav>.button { background: #006970; }
+.hero-section::before { background: rgb(5 33 41 / 56%); }
+.hero-copy .eyebrow, .hero-bottom .button-primary { background: #ffe37d; color: #153f49; }
+.hero-copy h1 span, .hero-note strong, .hero-note svg { color: #ffe37d; }
+.intro-strip { background: #83dfd2; }
+.strip-grid>div, .strip-grid>div:nth-child(n) { border-color: #3c9b90; }
+.strip-grid span, .strip-grid svg { color: #153f49; }
+.strip-grid strong { color: #244d50; }
+.programs-section { background: #f2faf8; }
+.program-grid { gap: 24px; border: 0; }
+.program-card, .program-card:nth-child(n), .programs-section .program-card { border: 1px solid #cbdedc; border-radius: 6px; overflow: hidden; padding: 26px; min-height: 500px; background: #fff; }
+.program-card:hover { background: #fff; }
+.program-photo { margin: -26px -26px 24px; overflow: hidden; aspect-ratio: 1.8; flex-shrink: 0; border-bottom: 6px solid #f9c65d; }
+.program-photo img { width: 100%; height: 100%; object-fit: cover; }
+.program-card:nth-child(3n+2) .program-photo { border-color: #f5917b; }
+.program-card:nth-child(3n) .program-photo { border-color: #56c8bc; }
+.card-top { margin-bottom: 18px; }
+.program-card .icon-tile { background: #ffe37d; color: #153f49; }
+.program-card:nth-child(3n+2) .icon-tile { background: #ffd5ca; }
+.program-card:nth-child(3n) .icon-tile { background: #b8eae2; }
+.program-code, .card-category, .card-number { color: #345960; }
+.card-number { right: 26px; bottom: 26px; }
+.class-schedule { background: #e1f2fc; padding: 28px; border: 0; border-left: 5px solid #147fa9; }
+.learning-section { background: #fff1bc; }
+.photo-label { background: #006970; color: #fff; }
+.learning-point { border-color: #cfb969; }
+.learning-point>span { background: #ffe37d; border-color: #ba9d35; color: #153f49; }
+.learning-photo img { border-radius: 6px 6px 0 0; }
+.academy-intro { background: #087785; }
+.academy-layout .eyebrow, .academy-layout .text-link { color: #fff1bc; }
+.academy-layout>div>p:not(.eyebrow) { color: #fff; }
+.experiences-section { background: #ffd5ca; }
+.experiences-section .eyebrow, .soft-background .eyebrow { color: #153f49; }
+.experiences-grid article { border-color: #bb7664; }
+.news-section { background: #eff7fc; }
+.news-grid { gap: 32px; }
+.news-grid article { border: 0; padding: 0 0 26px; }
+.news-photo { width: 100%; aspect-ratio: 1.9; height: auto; object-fit: cover; margin-bottom: 24px; border-radius: 5px; }
+.news-number { bottom: 28px; }
+.contact-cta { background: #ffe37d; }
+.cta-actions .button { background: #006970; }
+.page-heading { background: #d7f4ed; }
+.page-heading .eyebrow { background: #ffe37d; }
+.resource-callout { background: #b8eae2; }
+.soft-background { background: #ffd5ca; }
+.resource-directory>section:nth-child(1) { border-top: 5px solid #efb447; padding-top: 22px; }
+.resource-directory>section:nth-child(2) { border-top: 5px solid #ef947d; padding-top: 22px; }
+.resource-directory>section:nth-child(3) { border-top: 5px solid #44b9b2; padding-top: 22px; }
+.enrollment-card, .admissions-aside { background: #e1f2fc; border-color: #147fa9; }
+.visit-graphic, .visit-graphic>span { background: #b8eae2; }
+footer { background: #123d48; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .program-photo img, .news-photo { transition: transform .5s; }
+  .program-card:hover .program-photo img { transform: scale(1.04); }
+}
+@media (max-width: 800px) {
+  .programs-section .program-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .program-grid, .programs-section .program-grid { grid-template-columns: 1fr; gap: 24px; }
+  .program-card, .program-card:nth-child(n), .programs-section .program-card { min-height: 480px; }
+  .class-schedule { padding: 22px 18px; }
+  .photo-label { font-size: 9px; }
+}

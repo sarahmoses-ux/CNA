@@ -60,6 +60,7 @@ Images were downloaded from the original academy website and stored locally. Des
 - Hero: `/wp-content/uploads/2026/07/image-2.png`
 - About: `/wp-content/uploads/2026/07/image-1024x564.png`
 - Classroom: `/wp-content/uploads/2026/06/cna-2-1-768x512.webp`
+- Additional program/news classroom photos added October 5, 2026: `/wp-content/uploads/2026/06/cna-4-1.webp`, `cna-3-1.webp`, `cna-5-1.webp`, and `cna-6-1.webp`. All are stored locally in `public/images`. Images illustrate healthcare training and do not identify the pictured people as academy students or article subjects.
 
 PNG photos were converted to WebP at quality 85. Below-fold photos load lazily; the hero has high fetch priority. DM Sans and Manrope Latin variable fonts are hosted locally through Fontsource packages.
 
