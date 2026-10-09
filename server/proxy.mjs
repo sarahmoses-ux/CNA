@@ -5,7 +5,9 @@ export async function proxyAccountRequest(req, res, { backend = process.env.REND
   res.setHeader('Content-Type', 'application/json');
   const reply = (status, error) => { res.writeHead(status); res.end(JSON.stringify({ error })); };
   const url = new URL(req.url, 'http://localhost');
-  const path = url.pathname;
+  const routedEndpoint = req.query?.__academyEndpoint || url.searchParams.get('__academyEndpoint');
+  const path = url.pathname === '/api/[endpoint]' && typeof routedEndpoint === 'string' ? `/api/${routedEndpoint}` : url.pathname;
+  url.searchParams.delete('__academyEndpoint');
   const methods = apiMethods[path];
   if (!methods) return reply(404, 'Not found.');
   if (!methods.includes(req.method)) { res.setHeader('Allow', methods.join(', ')); return reply(405, 'Method not allowed.'); }

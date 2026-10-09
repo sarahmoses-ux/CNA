@@ -7,6 +7,7 @@
     "api/[endpoint].js": { "maxDuration": 30 }
   },
   "routes": [
+    { "src": "/api/([^/]+)", "dest": "/api/[endpoint]?__academyEndpoint=$1" },
     { "handle": "filesystem" },
     { "src": "/api(?:/.*)?", "status": 404 },
     { "src": "/.*", "dest": "/index.html" }

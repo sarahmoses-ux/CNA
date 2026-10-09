@@ -85,9 +85,13 @@ test('Vercel relay forwards bodies, origins, cookies, and trusted client IPs to 
     assert.equal(JSON.parse(upstream.body.toString()).email, 'student@example.test');
   }
   const before = received.length;
+  assert.equal((await fetch(base + '/api/[endpoint]?__academyEndpoint=admin-students&q=student')).status, 200);
+  assert.equal(received.at(-1).url, 'https://example.onrender.com/api/admin-students?q=student', 'Explicit Vercel routing preserves the API endpoint and search query');
+  const afterRewrite = received.length;
   assert.equal((await fetch(base + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: 'x'.repeat(9000) }) })).status, 413);
   assert.equal((await fetch(base + '/api/unknown')).status, 404);
-  assert.equal(received.length, before, 'Invalid requests do not reach Render');
+  assert.equal(afterRewrite, before + 1);
+  assert.equal(received.length, afterRewrite, 'Invalid requests do not reach Render');
   offline = true;
   assert.equal((await fetch(base + '/api/health')).status, 502);
 });
