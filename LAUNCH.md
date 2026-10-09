@@ -98,6 +98,8 @@ OTP validation: isolated backend tests cover expiry, failed codes, single use, r
 
 Opening /admin while signed out shows a dedicated staff login on that URL. Password and email OTP are required; student accounts cannot open staff records.
 
+To change an existing administrator password, update SEED_ADMIN_PASSWORD in your private local .env, then run npm run reset:admin-password. This explicitly updates only the allowlisted staff account, verifies the saved password hash, and revokes its sessions and pending OTP challenges. Student records and other accounts are preserved. No frontend or backend redeployment is needed for the database password change.
+
 To seed the first staff account, set SEED_ADMIN_PASSWORD privately in your local .env (12–128 characters), ensure ADMIN_EMAILS includes sayflux04@gmail.com, then run npm run seed:admin against the intended MongoDB database. SEED_ADMIN_EMAIL defaults to sayflux04@gmail.com. The seed creates only a missing account, hashes its password, and preserves existing credentials and records when rerun. It does not grant a session or bypass OTP. Do not put the seed password in Vercel or commit it. Existing staff accounts use their existing password.
 
 The /admin page is restricted to verified accounts whose email is in Render's ADMIN_EMAILS setting. Set ADMIN_EMAILS=sayflux04@gmail.com (the included Blueprint already supplies it). More staff addresses can be added as a comma-separated list. This setting is server-only. No client registration field or student record can grant administrator access.
