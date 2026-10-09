@@ -14,6 +14,8 @@ await page.route('**/api/**', async route => {
   const request = route.request(), url = new URL(request.url());
   const reply = (status, value) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
   if (url.pathname === '/api/me') return unavailable ? reply(503, { error: 'The account service is not configured yet.' }) : reply(role ? 200 : 401, role ? { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } } : { error: 'Please sign in.' });
+  if (url.pathname === '/api/login') return reply(202, { verificationRequired: true, challengeId: 'b'.repeat(64), resendAfter: 60 });
+  if (url.pathname === '/api/verify-otp') { role = 'admin'; return reply(200, { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } }); }
   if (url.pathname === '/api/logout') { role = null; return reply(200, { ok: true }); }
   if (url.pathname.startsWith('/api/admin-')) calls++;
   if (role !== 'admin') return reply(403, { error: 'Administrator access is required.' });
@@ -42,11 +44,24 @@ try {
   await page.getByRole('heading', { name: 'Unable to load administration' }).waitFor();
   await layout();
   unavailable = false;
-  await page.goto(base + '/admin'); await page.waitForURL('**/login');
+  await page.goto(base + '/admin');
+  await page.getByRole('heading', { name: 'Administrator sign in' }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/admin');
+  await layout();
+  await page.getByLabel('Email address').fill('sayflux04@gmail.com');
+  await page.getByLabel('Password', { exact: true }).fill('test-staff-password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByLabel('Verification code').fill('123456');
+  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await page.getByRole('button', { name: 'Add student' }).waitFor();
+  assert.equal(new URL(page.url()).pathname, '/admin', 'Staff OTP login opens records on the same route');
   role = 'student'; await page.goto(base + '/admin');
   await page.getByRole('heading', { name: 'Administrator access required' }).waitFor();
   await layout();
-  assert.equal(calls, 0, 'Student UI does not fetch the directory');
+  const callsBeforeDeniedReload = calls;
+  await page.reload();
+  await page.getByRole('heading', { name: 'Administrator access required' }).waitFor();
+  assert.equal(calls, callsBeforeDeniedReload, 'Student UI does not fetch the directory');
   role = 'admin'; await page.reload();
   await page.getByRole('button', { name: 'Add student' }).waitFor();
   await page.getByRole('button', { name: 'Add student' }).click();
@@ -85,8 +100,9 @@ try {
   await page.getByLabel('Find a student').fill('missing-student');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await page.getByText('No student records found.').waitFor();
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await page.waitForURL('**/login');
-  await page.goto(base + '/admin'); await page.waitForURL('**/login');
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.getByRole('heading', { name: 'Administrator sign in' }).waitFor();
+  await page.goto(base + '/admin'); await page.getByRole('heading', { name: 'Administrator sign in' }).waitFor();
   assert.deepEqual(errors, []);
   console.log('Passed admin access guard, create/edit/reopen/search, logout, mobile layout, and accessibility. API responses were mocked; no student records were written to MongoDB.');
 } finally { await browser.close(); }

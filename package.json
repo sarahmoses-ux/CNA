@@ -14,6 +14,7 @@
     "check:otp-ui": "node scripts/check-otp-ui.mjs",
     "check:admin-ui": "node scripts/check-admin-ui.mjs",
     "start:api": "node server/start.mjs",
+    "seed:admin": "node scripts/seed-admin.mjs",
     "test:accounts": "node --test server/accounts.test.mjs server/vercel.test.mjs server/otp.test.mjs server/admin.test.mjs",
     "check:mongodb": "node scripts/check-mongodb.mjs"
   },

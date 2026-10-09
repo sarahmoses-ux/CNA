@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { request } from './accountApi';
 import { Button, PageHeading } from './components';
 import { academyContact, programs } from './data';
-export function AccountForm({ register = false }) {
+export function AccountForm({ register = false, admin = false, onAuthenticated }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -12,10 +12,11 @@ export function AccountForm({ register = false }) {
   const [seconds, setSeconds] = useState(0);
   const [notice, setNotice] = useState('');
   useEffect(() => {
+    if (admin) return;
     let active = true;
     request('me').then(({ user }) => { if (active) navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true }); }).catch(() => {});
     return () => { active = false; };
-  }, [navigate, register]);
+  }, [navigate, register, admin]);
   useEffect(() => {
     if (!challenge) return;
     const update = () => setSeconds(Math.max(0, Math.ceil((challenge.resendAt - Date.now()) / 1000)));
@@ -28,6 +29,11 @@ export function AccountForm({ register = false }) {
     try {
       if (challenge) {
         const { user } = await request('verify-otp', { challengeId: challenge.challengeId, code });
+        if (admin) {
+          if (user.role !== 'admin') { await request('logout', {}); startOver(); throw new Error('This account does not have administrator access.'); }
+          onAuthenticated();
+          return;
+        }
         navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
       } else {
         const fields = Object.fromEntries(new FormData(form));
@@ -55,10 +61,10 @@ export function AccountForm({ register = false }) {
   }
   function startOver() { setChallenge(null); setCode(''); setError(''); setNotice(''); }
   return <>
-    <PageHeading eyebrow="Student account" title={register ? 'Your journey starts here.' : 'Welcome back.'} description={register ? 'Create your academy account and verify your email to access your student dashboard.' : 'Sign in with your password, then confirm the code sent to your email.'} />
+    <PageHeading eyebrow={admin ? 'Staff administration' : 'Student account'} title={admin ? 'Administrator login.' : register ? 'Your journey starts here.' : 'Welcome back.'} description={register ? 'Create your academy account and verify your email to access your student dashboard.' : 'Sign in with your password, then confirm the code sent to your email.'} />
     <section className="section"><div className="container account-layout">
       <form className="account-form" onSubmit={submit} aria-busy={busy}>
-        <h2>{challenge ? 'Verify your email' : register ? 'Create an account' : 'Student sign in'}</h2>
+        <h2>{challenge ? 'Verify your email' : admin ? 'Administrator sign in' : register ? 'Create an account' : 'Student sign in'}</h2>
         {challenge ? <>
           <p>Enter the six-digit code sent to <strong className="otp-email">{challenge.email}</strong>. The code expires in 10 minutes.</p>
           <label htmlFor="verification-code">Verification code</label>
@@ -78,9 +84,9 @@ export function AccountForm({ register = false }) {
         {challenge ? <div className="otp-actions">
           <button className="button button-outline" type="button" disabled={busy || seconds > 0} onClick={resend}>{seconds > 0 ? `Resend code in ${seconds}s` : 'Resend code'}</button>
           <button className="text-link" type="button" disabled={busy} onClick={startOver}>Start again / change email</button>
-        </div> : <p>{register ? 'Already have an account?' : 'New to the academy?'} <Link className="text-link" to={register ? '/login' : '/register'}>{register ? 'Sign in' : 'Create an account'}</Link></p>}
+        </div> : admin ? <p className="small-text">Access is restricted to authorized academy staff.</p> : <p>{register ? 'Already have an account?' : 'New to the academy?'} <Link className="text-link" to={register ? '/login' : '/register'}>{register ? 'Sign in' : 'Create an account'}</Link></p>}
       </form>
-      <aside className="admissions-aside"><p className="eyebrow">IN-PERSON TRAINING</p><h2>Your account. Your next step.</h2><p>Your dashboard keeps your account details in one place. Classes take place at the academy, with practical instruction and hands-on learning.</p><p>Creating an account does not enroll you in a class. Contact admissions to confirm your program and schedule.</p><address>{academyContact.address}</address><div className="detail-block"><Button to="/programs" variant="outline">Explore programs</Button></div><p className="small-text">This account is separate from any existing FalconPad account.</p></aside>
+      {admin ? <aside className="admissions-aside"><p className="eyebrow">STAFF ACCESS</p><h2>Student administration.</h2><p>Sign in with your staff account to manage student contact details, enrollment, class schedules, and private notes.</p><p>Your email verification code is required each time you sign in.</p><Link className="text-link" to="/login">Student sign in</Link></aside> : <aside className="admissions-aside"><p className="eyebrow">IN-PERSON TRAINING</p><h2>Your account. Your next step.</h2><p>Your dashboard keeps your account details in one place. Classes take place at the academy, with practical instruction and hands-on learning.</p><p>Creating an account does not enroll you in a class. Contact admissions to confirm your program and schedule.</p><address>{academyContact.address}</address><div className="detail-block"><Button to="/programs" variant="outline">Explore programs</Button></div><p className="small-text">This account is separate from any existing FalconPad account.</p></aside>}
     </div></section>
   </>;
 }

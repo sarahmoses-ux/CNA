@@ -96,6 +96,10 @@ OTP validation: isolated backend tests cover expiry, failed codes, single use, r
 
 ## Staff administration
 
+Opening /admin while signed out shows a dedicated staff login on that URL. Password and email OTP are required; student accounts cannot open staff records.
+
+To seed the first staff account, set SEED_ADMIN_PASSWORD privately in your local .env (12–128 characters), ensure ADMIN_EMAILS includes sayflux04@gmail.com, then run npm run seed:admin against the intended MongoDB database. SEED_ADMIN_EMAIL defaults to sayflux04@gmail.com. The seed creates only a missing account, hashes its password, and preserves existing credentials and records when rerun. It does not grant a session or bypass OTP. Do not put the seed password in Vercel or commit it. Existing staff accounts use their existing password.
+
 The /admin page is restricted to verified accounts whose email is in Render's ADMIN_EMAILS setting. Set ADMIN_EMAILS=sayflux04@gmail.com (the included Blueprint already supplies it). More staff addresses can be added as a comma-separated list. This setting is server-only. No client registration field or student record can grant administrator access.
 
 Create an account using sayflux04@gmail.com, verify the email OTP, then sign in with your password and OTP. Authorized staff are redirected to /admin. Existing accounts can sign in normally. If the allowlist is empty, no account has administrator access. Updating the allowlist requires the Render service to restart/redeploy.

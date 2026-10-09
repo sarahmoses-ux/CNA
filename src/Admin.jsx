@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { PageHeading } from './components';
 import { programs } from './data';
 import { request } from './accountApi';
+import { AccountForm } from './StudentAccount';
 import './admin.css';
 
 const blank = { name: '', email: '', phone: '', program: '', status: 'Inquiry', start_date: '', end_date: '', class_schedule: '', notes: '' };
 export default function Admin() {
-  const navigate = useNavigate();
   const [access, setAccess] = useState('loading');
+  const [retry, setRetry] = useState(0);
   const [students, setStudents] = useState([]);
   const [draft, setDraft] = useState(null);
   const [query, setQuery] = useState('');
@@ -36,11 +37,11 @@ export default function Admin() {
       if (active) { setStudents(data.students); setNextCursor(data.nextCursor); }
     }).catch(failure => {
       if (!active) return;
-      if (failure.status === 401) navigate('/login', { replace: true });
+      if (failure.status === 401) setAccess('signed-out');
       else { setAccess(previous => previous === 'loading' ? 'error' : previous); setError(failure.message); }
     });
     return () => { active = false; };
-  }, [navigate]);
+  }, [retry]);
   async function list(search = activeQuery, cursor) {
     setBusy(true); setError('');
     try {
@@ -72,10 +73,11 @@ export default function Admin() {
   }
   async function logout() {
     setBusy(true); setError('');
-    try { await request('logout', {}); navigate('/login', { replace: true }); }
+    try { await request('logout', {}); setStudents([]); setDraft(null); setAccess('signed-out'); setBusy(false); }
     catch (failure) { setError(failure.message); setBusy(false); }
   }
   const field = (name, value) => setDraft(previous => ({ ...previous, [name]: value }));
+  if (access === 'signed-out') return <AccountForm admin onAuthenticated={() => { setAccess('loading'); setRetry(previous => previous + 1); }} />;
   if (access !== 'allowed') return <section className="section admin-section"><div className="container"><div className="admin-access-card"><p className="eyebrow">STAFF ADMINISTRATION</p><h1>{access === 'denied' ? 'Administrator access required' : access === 'error' ? 'Unable to load administration' : 'Administration'}</h1>{access === 'loading' ? <p role="status">Checking access...</p> : access === 'denied' ? <><p>Your student account cannot access staff records.</p><Link className="button button-primary" to="/dashboard">Return to your dashboard</Link></> : <><p role="alert">{error}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></>}</div></div></section>;
   return <>
     <PageHeading eyebrow="STAFF ADMINISTRATION" title="Student records." description="Manage student contact details, enrollment, and class schedules." />
