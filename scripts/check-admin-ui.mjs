@@ -8,12 +8,12 @@ const browser = await chromium.launch({ executablePath: process.env.BROWSER_PATH
 const context = await browser.newContext({ reducedMotion: 'reduce' });
 const page = await context.newPage();
 const errors = []; page.on('pageerror', error => errors.push(error.message));
-let role = null, calls = 0;
+let role = null, calls = 0, unavailable = false;
 const records = [];
 await page.route('**/api/**', async route => {
   const request = route.request(), url = new URL(request.url());
   const reply = (status, value) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
-  if (url.pathname === '/api/me') return reply(role ? 200 : 401, role ? { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } } : { error: 'Please sign in.' });
+  if (url.pathname === '/api/me') return unavailable ? reply(503, { error: 'The account service is not configured yet.' }) : reply(role ? 200 : 401, role ? { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } } : { error: 'Please sign in.' });
   if (url.pathname === '/api/logout') { role = null; return reply(200, { ok: true }); }
   if (url.pathname.startsWith('/api/admin-')) calls++;
   if (role !== 'admin') return reply(403, { error: 'Administrator access is required.' });
@@ -37,9 +37,15 @@ async function layout() {
   }
 }
 try {
+  unavailable = true;
+  await page.goto(base + '/admin');
+  await page.getByRole('heading', { name: 'Unable to load administration' }).waitFor();
+  await layout();
+  unavailable = false;
   await page.goto(base + '/admin'); await page.waitForURL('**/login');
   role = 'student'; await page.goto(base + '/admin');
   await page.getByRole('heading', { name: 'Administrator access required' }).waitFor();
+  await layout();
   assert.equal(calls, 0, 'Student UI does not fetch the directory');
   role = 'admin'; await page.reload();
   await page.getByRole('button', { name: 'Add student' }).waitFor();

@@ -1,4 +1,9 @@
 .admin-toolbar,.admin-editor-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:28px; }
+.admin-access-card { max-width:640px; margin-inline:auto; padding:32px; border:1px solid #819b7e; border-radius:12px; background:#dbe3ce; color:#173f35; overflow-wrap:anywhere; }
+.admin-access-card h1 { font-size:clamp(28px,5vw,40px); line-height:1.2; color:#173f35; margin:16px 0; }
+.admin-access-card .eyebrow { color:#173f35; }
+.admin-access-card p { line-height:1.6; }
+.admin-access-card .button { margin-top:12px; white-space:normal; text-align:center; }
 .admin-layout { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:36px; align-items:start; }
 .admin-directory,.admin-editor { min-width:0; }
 .admin-editor { border:1px solid #d6e1df; border-radius:12px; padding:28px; background:#dbe3ce; color:#173f35; }
@@ -38,6 +43,8 @@
   .admin-toolbar .button { flex:1; padding:14px 12px; }
 }
 @media(max-width:480px) {
+  .admin-access-card { padding:24px 20px; }
+  .admin-access-card .button { width:100%; }
   .admin-search>div { grid-template-columns:minmax(0,1fr); }
   .admin-search .button { width:100%; }
   .admin-editor { padding:16px; }

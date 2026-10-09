@@ -76,7 +76,7 @@ export default function Admin() {
     catch (failure) { setError(failure.message); setBusy(false); }
   }
   const field = (name, value) => setDraft(previous => ({ ...previous, [name]: value }));
-  if (access !== 'allowed') return <section className="section container"><h1>{access === 'denied' ? 'Administrator access required' : 'Administration'}</h1>{access === 'loading' ? <p role="status">Checking access...</p> : access === 'denied' ? <><p>Your student account cannot access staff records.</p><Link className="text-link" to="/dashboard">Return to your dashboard</Link></> : <><p role="alert">{error}</p><button className="button button-outline" onClick={() => window.location.reload()}>Try again</button></>}</section>;
+  if (access !== 'allowed') return <section className="section admin-section"><div className="container"><div className="admin-access-card"><p className="eyebrow">STAFF ADMINISTRATION</p><h1>{access === 'denied' ? 'Administrator access required' : access === 'error' ? 'Unable to load administration' : 'Administration'}</h1>{access === 'loading' ? <p role="status">Checking access...</p> : access === 'denied' ? <><p>Your student account cannot access staff records.</p><Link className="button button-primary" to="/dashboard">Return to your dashboard</Link></> : <><p role="alert">{error}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></>}</div></div></section>;
   return <>
     <PageHeading eyebrow="STAFF ADMINISTRATION" title="Student records." description="Manage student contact details, enrollment, and class schedules." />
     <section className="section admin-section"><div className="container">
