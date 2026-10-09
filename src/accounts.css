@@ -5,6 +5,12 @@
 .account-form button { margin-bottom:18px; }
 .account-form .small-text { font-weight:400; }
 .account-error { color:#a02020; }
+.otp-email { overflow-wrap:anywhere; }
+.otp-actions { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+.otp-actions .text-link { background:none; border:0; font:inherit; cursor:pointer; }
+.account-form .otp-actions .button-outline { color:#142f3b; background:#fff; border-color:#81959c; }
+.account-form .otp-actions .button-outline:hover { color:#142f3b; background:#eef4f2; }
+#verification-code { letter-spacing:8px; font-size:24px; }
 button:disabled { opacity:.65; cursor:wait; }
 .dashboard-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
 .dashboard-card { padding:30px; border:1px solid #d6e1df; border-radius:16px; }

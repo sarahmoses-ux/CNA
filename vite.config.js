@@ -6,7 +6,7 @@ function accounts() {
     name: 'academy-accounts',
     configureServer(vite) {
       const environment = loadEnv(vite.config.mode, process.cwd(), '');
-      for (const key of ['MONGODB_URI', 'MONGODB_DB', 'APP_ORIGIN']) {
+      for (const key of ['MONGODB_URI', 'MONGODB_DB', 'APP_ORIGIN', 'RESEND_API_KEY', 'RESEND_FROM', 'OTP_SECRET', 'ADMIN_EMAILS']) {
         if (process.env[key] === undefined && environment[key]) process.env[key] = environment[key];
       }
       const api = createAccountServer();

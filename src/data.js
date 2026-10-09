@@ -3,8 +3,8 @@ export const services = {
   calendar: 'https://cnatraining.falconpad.com/public/program-schedules',
   login: '/login',
   directions: 'https://www.google.com/maps/dir/?api=1&destination=7463+NW+23rd+St+Bethany+OK+73008',
-  inquiry: 'https://cnatrainingacademy.net/contact-us/',
-  applicationForm: 'https://cnatrainingacademy.net/',
+  inquiry: 'mailto:info@cnatrainingacademy.net',
+  applicationForm: '/register',
   facebook: 'https://www.facebook.com/CNAtrainingacademy',
   instagram: 'https://www.instagram.com/cnatrainingacademy1/',
 };
@@ -21,7 +21,7 @@ export const classSchedules = [
   ['Evening classes', '4:00 PM-10:00 PM'],
   ['Weekend classes', '8:00 AM-4:00 PM'],
 ];
-const academyPage = path => `https://cnatrainingacademy.net/${path}/`;
+const academyPage = path => `/academy/${path}`;
 export const resourceGroups = [
   { title: 'Admissions', links: [
     ['Apply / Register', services.apply], ['Application form', services.applicationForm],

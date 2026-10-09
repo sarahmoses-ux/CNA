@@ -13,20 +13,27 @@ test('MongoDB accounts persist; sessions isolate students and are revoked on log
     const cleanup = new MongoClient(uri);
     try { await cleanup.connect(); await cleanup.db(database).dropDatabase(); } finally { await cleanup.close(); }
   });
-  let server = createAccountServer({ uri, database });
+  const delivered = [];
+  const options = { uri, database, secure: false, proxySecret: undefined, otpSecret: 'integration-test-secret-at-least-32-characters', sendOtp: async mail => { delivered.push(mail); } };
+  let server = createAccountServer(options);
   await listen(server);
   let base = `http://127.0.0.1:${server.address().port}`;
   const call = (path, body, cookie, origin = base) => fetch(base + '/api/' + path, { method: body ? 'POST' : 'GET', headers: { ...(body ? { 'Content-Type': 'application/json', Origin: origin } : {}), ...(cookie ? { Cookie: cookie } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  const authenticate = async (path, fields) => {
+    const started = await call(path, fields); assert.equal(started.status, 202); assert.equal(started.headers.get('set-cookie'), null);
+    const { challengeId } = await started.json();
+    return call('verify-otp', { challengeId, code: delivered.at(-1).code });
+  };
   let response = await call('me'); assert.equal(response.status, 401);
   response = await call('register', { name: 'Test Student A', email: 'a@example.test', password: 'test-password-123' }, null, 'https://wrong.example'); assert.equal(response.status, 403);
   response = await call('register', { name: 'Test Student A', email: 'a@example.test', password: 'short' }); assert.equal(response.status, 400);
-  response = await call('register', { name: 'Test Student A', email: 'A@EXAMPLE.TEST', password: 'test-password-123' }); assert.equal(response.status, 201);
+  response = await authenticate('register', { name: 'Test Student A', email: 'A@EXAMPLE.TEST', password: 'test-password-123' }); assert.equal(response.status, 201);
   const first = response.headers.get('set-cookie').split(';')[0];
   assert.match(response.headers.get('set-cookie'), /HttpOnly/);
   const firstUser = (await response.json()).user;
   assert.equal(firstUser.email, 'a@example.test'); assert.equal(firstUser.password_hash, undefined);
   response = await call('register', { name: 'Test Student A', email: 'a@example.test', password: 'test-password-123' }); assert.equal(response.status, 409);
-  response = await call('register', { name: 'Test Student B', email: 'b@example.test', password: 'test-password-456' }); assert.equal(response.status, 201);
+  response = await authenticate('register', { name: 'Test Student B', email: 'b@example.test', password: 'test-password-456' }); assert.equal(response.status, 201);
   const second = response.headers.get('set-cookie').split(';')[0];
   assert.equal((await (await call('me', null, first)).json()).user.name, 'Test Student A');
   assert.equal((await (await call('me', null, second)).json()).user.name, 'Test Student B');
@@ -34,9 +41,9 @@ test('MongoDB accounts persist; sessions isolate students and are revoked on log
   assert.equal((await call('logout', {}, first)).status, 200);
   assert.equal((await call('me', null, first)).status, 401);
   await close(server);
-  server = createAccountServer({ uri, database }); await listen(server); base = `http://127.0.0.1:${server.address().port}`;
+  server = createAccountServer(options); await listen(server); base = `http://127.0.0.1:${server.address().port}`;
   try {
-    response = await call('login', { email: 'a@example.test', password: 'test-password-123' }); assert.equal(response.status, 200);
+    response = await authenticate('login', { email: 'a@example.test', password: 'test-password-123' }); assert.equal(response.status, 200);
     assert.equal((await response.json()).user.id, firstUser.id);
     for (let i = 0; i < 31; i++) response = await call('login', { email: 'a@example.test', password: 'wrong-password' });
     assert.equal(response.status, 429);

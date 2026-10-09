@@ -4,10 +4,13 @@ import { ArrowRight, ArrowUpRight, Check, CalendarDays, MapPin, Phone, Mail, Clo
 import { Button, ContactCTA, Footer, Header, Icon, PageHeading, ProgramGrid } from './components';
 import { academyContact, faqs, generalRequirements, programs, services } from './data';
 import MotionEffects from './MotionEffects';
+import AcademyPage from './AcademyPage';
+import Admin from './Admin';
 import { AccountForm, Dashboard } from './StudentAccount';
 import './accounts.css';
 import { ClassSchedule, NewsSection, ResourceDirectory, SocialLinks, StudentExperiences } from './ContentSections';
 const metadata = {
+  '/admin': ['Student Administration', 'Authorized staff access to academy student records.'],
   '/register': ['Create an Account', 'Create your CNA Training Academy student account.'],
   '/login': ['Student Sign In', 'Sign in to your CNA Training Academy student account.'],
   '/dashboard': ['Student Dashboard', 'Your personal CNA Training Academy student dashboard.'],
@@ -23,7 +26,7 @@ function RouteEffects() {
   const initial = useRef(true);
   useEffect(() => {
     const program = programs.find(p => pathname === `/programs/${p.slug}`);
-    const [title, description] = program ? [program.name, program.description + ' Review eligibility and contact admissions in Bethany, Oklahoma.'] : metadata[pathname] || ['Page Not Found', 'Find programs, admissions information, and contact details for CNA Training Academy.'];
+    const [title, description] = program ? [program.name, program.description + ' Review eligibility and contact admissions in Bethany, Oklahoma.'] : metadata[pathname] || (pathname.startsWith('/academy/') ? [pathname.split('/').pop().split('-').join(' '), 'Academy resources, training guides, and student support.'] : ['Page Not Found', 'Find programs, admissions information, and contact details for CNA Training Academy.']);
     document.title = `${title} | CNA Training Academy`;
     document.querySelector('meta[name="description"]').setAttribute('content', description);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -75,7 +78,7 @@ function Contact() {
       <div className="contact-method"><span className="icon-tile"><Phone aria-hidden="true" /></span><div><h3>Call our team</h3><p>Office <a href={academyContact.officeHref}>{academyContact.office}</a></p><p>Work <a href={academyContact.workHref}>{academyContact.work}</a></p><p>Fax <span>{academyContact.fax}</span></p></div></div>
       <div className="contact-method"><span className="icon-tile"><Mail aria-hidden="true" /></span><div><h3>Send an email</h3>{academyContact.emails.map(email => <a key={email} href={`mailto:${email}`}>{email}</a>)}</div></div>
       <div className="contact-method"><span className="icon-tile"><Clock aria-hidden="true" /></span><div><h3>Published office hours</h3><p><strong>{academyContact.officeHours}</strong></p><p className="small-text">Please call ahead to arrange assistance; availability may vary with classes and clinicals.</p></div></div>
-      <div className="contact-message"><h3>Send a message</h3><Button href={services.inquiry} variant="outline">Academy inquiry form</Button><SocialLinks /></div>
+      <div className="contact-message"><h3>Send a message</h3><Button href={services.inquiry} variant="outline">Email admissions</Button><SocialLinks /></div>
     </div><aside><div className="visit-card"><div className="visit-graphic" aria-hidden="true"><div className="map-street street-one" /><div className="map-street street-two" /><div className="map-street street-three" /><MapPin size={45} /><span>BETHANY, OKLAHOMA</span></div><div className="visit-content"><p className="eyebrow">COME SAY HELLO</p><h2>Visit the academy.</h2><address>CNA Training Academy<br />{academyContact.address}</address><Button href={services.directions}>Get Directions</Button></div></div><ClassSchedule /></aside></div></section><ContactCTA />
   </>;
 }
@@ -83,7 +86,7 @@ function NotFound() {
   return <section className="section not-found container"><span className="eyebrow">404 · PAGE NOT FOUND</span><h1>Let’s get you back<br />on the right path.</h1><p>The page you’re looking for may have moved. Explore our programs or contact the academy for help.</p><div className="button-row"><Button to="/">Back to Home</Button><Button to="/programs" variant="outline">Explore Programs</Button></div></section>;
 }
 export default function App() {
-  return <BrowserRouter><RouteEffects /><MotionEffects /><Header /><main id="main" tabIndex={-1}><Routes><Route path="/" element={<Home />} /><Route path="/programs" element={<Programs />} /><Route path="/programs/:slug" element={<ProgramDetails />} /><Route path="/about" element={<About />} /><Route path="/admissions" element={<Admissions />} /><Route path="/contact" element={<Contact />} /><Route path="/resources" element={<Resources />} /><Route path="/register" element={<AccountForm register />} /><Route path="/login" element={<AccountForm />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="*" element={<NotFound />} /></Routes></main><Footer /></BrowserRouter>;
+  return <BrowserRouter><RouteEffects /><MotionEffects /><Header /><main id="main" tabIndex={-1}><Routes><Route path="/" element={<Home />} /><Route path="/programs" element={<Programs />} /><Route path="/programs/:slug" element={<ProgramDetails />} /><Route path="/about" element={<About />} /><Route path="/admissions" element={<Admissions />} /><Route path="/contact" element={<Contact />} /><Route path="/resources" element={<Resources />} /><Route path="/academy/:slug" element={<AcademyPage />} /><Route path="/register" element={<AccountForm key="register" register />} /><Route path="/login" element={<AccountForm key="login" />} /><Route path="/dashboard" element={<Dashboard />} /><Route path="/admin" element={<Admin />} /><Route path="*" element={<NotFound />} /></Routes></main><Footer /></BrowserRouter>;
 }
 
 
