@@ -14,7 +14,7 @@ Add these variables on **Render only** (and to your private local .env if testin
 | RESEND_FROM | `CNA Training Academy <verification@cnatrainingacademy.org>` |
 | OTP_SECRET | A separately generated random secret of at least 32 characters |
 
-Generate OTP_SECRET locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Keep it consistent across backend instances. It is separate from API_PROXY_SECRET and is never used by the frontend. Do not add these secrets to Vercel or to VITE_ variables. The Blueprint asks for the API key, supplies the sender address, and generates OTP_SECRET.
+Generate OTP_SECRET locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Keep it consistent across backend instances. It is never used by the frontend. Do not add these secrets to Vercel or to VITE_ variables. The Blueprint asks for the API key, supplies the sender address, and generates OTP_SECRET.
 
 [Resend domain verification](https://resend.com/docs/dashboard/domains/introduction) | [Resend email API](https://resend.com/docs/api-reference/emails/send-email)
 
@@ -22,7 +22,7 @@ Registration and password sign-in both send a six-digit email code. Registration
 
 ## 1. Deploy the backend on Render
 
-Create a **Web Service** from the repository root, or use the included render.yaml Blueprint. The Blueprint creates one Node web service and generates API_PROXY_SECRET. Review the service plan in Render before creation. For a manual service use:
+Create a **Web Service** from the repository root, or use the included render.yaml Blueprint. The Blueprint creates one Node web service. Review the service plan in Render before creation. For a manual service use:
 
 - Runtime: Node
 - Node version: 24.x
@@ -38,14 +38,13 @@ Set these Render environment variables:
 | NODE_VERSION | 24 |
 | MONGODB_URI | Existing private Atlas connection string |
 | MONGODB_DB | Existing database name, or cna_academy |
-| APP_ORIGIN | https://cnatrainingacademy.org |
-| API_PROXY_SECRET | A long random secret shared with Vercel |
+| APP_ORIGIN | https://www.cnatrainingacademy.org (current live origin) |
 
-For a manual service, generate a secret locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` and save it privately on both platforms. Do not paste it into chat. The server automatically uses Render's PORT and binds to 0.0.0.0.
+The server automatically uses Render's PORT and binds to 0.0.0.0. No shared proxy secret is required.
 
 In MongoDB Atlas Network Access, allow the outbound IP ranges shown for this Render service. A successful local connection does not prove Render can connect. Keep the existing cluster; no database migration is required. Configure database-user permissions and backups appropriate to your Atlas plan.
 
-Deploy, then open the Render service URL followed by /api/health. It must return {"ok":true}. The other account routes require the shared proxy secret and are intended to be called through the frontend.
+Deploy, then open the Render service URL followed by /api/health. It must return {"ok":true}. Account routes enforce session authentication, administrator authorization, OTP verification, and the configured website origin.
 
 [Render web services](https://render.com/docs/web-services) | [Render outbound IPs](https://render.com/docs/outbound-ip-addresses)
 
@@ -56,15 +55,14 @@ Set these in the existing Vercel project's **Settings > Environment Variables**,
 | Name | Value |
 | --- | --- |
 | RENDER_API_URL | Exact HTTPS service origin, e.g. https://your-service.onrender.com, without /api |
-| API_PROXY_SECRET | Exactly the same secret configured on Render |
 
-Database credentials belong on Render. Vercel's API function is only a forwarding layer. Do not prefix any of these values with VITE_ or commit private .env files. The proxy forwards the browser's Origin and session cookies and authenticates its client-IP metadata with the shared secret. Unknown API paths cannot fall through to the frontend.
+Database credentials belong on Render. Vercel's API function is only a forwarding layer. Do not prefix any of these values with VITE_ or commit private .env files. The proxy forwards the browser's Origin and session cookies without a shared secret. Rate limits use backend connection addresses, which may group traffic through the hosting relay; email-specific OTP limits also apply. Unknown API paths cannot fall through to the frontend.
 
 Deploy the updated repository root, including api, server/proxy.mjs, package.json, and vercel.json. Frontend build settings remain Vite, Node 24.x, build command npm run build, output directory dist. Uploading only dist omits the forwarding function. Redeploy after changing environment variables.
 
 ## 3. Connect the domain
 
-In Vercel **Settings > Domains**, add cnatrainingacademy.org and www.cnatrainingacademy.org. Redirect www to https://cnatrainingacademy.org.
+In Vercel **Settings > Domains**, add cnatrainingacademy.org and www.cnatrainingacademy.org. The live domain currently redirects to https://www.cnatrainingacademy.org. Keep APP_ORIGIN consistent with the final browser origin.
 
 In Porkbun Domain Management > your domain > DNS, copy the exact A, CNAME, and any verification TXT records shown by Vercel. Leave the Host blank for a root record and use www for the www record. Replace conflicting website records only and retain email MX/TXT records. Wait for valid configuration and working HTTPS.
 
@@ -82,8 +80,7 @@ Troubleshooting:
 
 - Render health fails: check MongoDB settings, Atlas Network Access, RESEND_API_KEY, RESEND_FROM, and OTP_SECRET, then Render logs. Health checks email configuration but do not send a test email.
 - Codes do not arrive: verify the sender domain, check the Resend dashboard and spam folder, and confirm the sending key can send from RESEND_FROM.
-- Website /api/health returns 503: check Vercel RENDER_API_URL and API_PROXY_SECRET.
-- Account requests return 403 with a proxy error: the secrets differ.
+- Website /api/health returns 503: check Vercel RENDER_API_URL.
 - Login/register return 403 with an origin error: APP_ORIGIN differs from the browser domain.
 - Proxy returns 502: Render is unreachable, timed out, or returned an unexpected response. Inspect Render and Vercel logs.
 

@@ -1,6 +1,6 @@
 import { apiMethods } from './api-routes.mjs';
 
-export async function proxyAccountRequest(req, res, { backend = process.env.RENDER_API_URL, secret = process.env.API_PROXY_SECRET, fetchUpstream = fetch } = {}) {
+export async function proxyAccountRequest(req, res, { backend = process.env.RENDER_API_URL, fetchUpstream = fetch } = {}) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', 'application/json');
   const reply = (status, error) => { res.writeHead(status); res.end(JSON.stringify({ error })); };
@@ -11,7 +11,7 @@ export async function proxyAccountRequest(req, res, { backend = process.env.REND
   const methods = apiMethods[path];
   if (!methods) return reply(404, 'Not found.');
   if (!methods.includes(req.method)) { res.setHeader('Allow', methods.join(', ')); return reply(405, 'Method not allowed.'); }
-  if (!backend || !secret) return reply(503, 'The account service is not configured yet.');
+  if (!backend) return reply(503, 'The account service is not configured yet.');
   try {
     const base = new URL(backend);
     if (base.protocol !== 'https:' || base.username || base.password || base.pathname !== '/' || base.search || base.hash) return reply(503, 'The account service is not configured correctly.');
@@ -30,10 +30,7 @@ export async function proxyAccountRequest(req, res, { backend = process.env.REND
       }
       if (body.length > 8192) return reply(413, 'Request too large.');
     }
-    // Vercel overwrites x-forwarded-for. Only the authenticated proxy supplies client IPs.
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
-    const headers = { 'x-academy-proxy-secret': secret, 'x-academy-client-ip': ip };
+    const headers = {};
     for (const key of ['content-type', 'origin', 'cookie']) if (typeof req.headers[key] === 'string') headers[key] = req.headers[key];
     const destination = new URL(path, base);
     destination.search = url.search;

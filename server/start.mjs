@@ -2,7 +2,6 @@ import { createAccountServer } from './accounts.mjs';
 import { loadApiEnvironment } from './environment.mjs';
 loadApiEnvironment();
 if (!process.env.MONGODB_URI) throw new Error('Set MONGODB_URI in .env before starting the account API.');
-if (process.env.RENDER === 'true' && !process.env.API_PROXY_SECRET) throw new Error('Set API_PROXY_SECRET on Render and Vercel.');
 if (process.env.RENDER === 'true' && (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM || !process.env.OTP_SECRET || process.env.OTP_SECRET.length < 32)) throw new Error('Configure RESEND_API_KEY, RESEND_FROM, and a strong OTP_SECRET on Render.');
 const port = Number(process.env.PORT || process.env.API_PORT || 3001);
 const host = process.env.API_HOST || (process.env.RENDER === 'true' ? '0.0.0.0' : '127.0.0.1');

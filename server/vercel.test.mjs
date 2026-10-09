@@ -22,7 +22,7 @@ test('Render startup uses PORT and binds to its public interface', async t => {
     child.once('exit', code => { clearTimeout(deadline); reject(new Error(`Startup exited early: ${code}`)); });
   });
   assert.equal((await fetch(`http://127.0.0.1:${port}/api/missing`)).status, 404);
-  assert.equal((await fetch(`http://127.0.0.1:${port}/api/me`)).status, 403);
+  assert.equal((await fetch(`http://127.0.0.1:${port}/api/register`, { method: 'POST', headers: { Origin: 'https://untrusted.example', 'Content-Type': 'application/json' }, body: '{}' })).status, 403);
 });
 
 test('unknown API routes and wrong methods fail before connecting to MongoDB', async t => {
@@ -38,19 +38,20 @@ test('unknown API routes and wrong methods fail before connecting to MongoDB', a
   assert.equal((await fetch(base + '/api/health')).status, 503);
 });
 
-test('Render rejects unauthenticated proxy requests and allows its public health check', async t => {
+test('Render ignores obsolete proxy secrets and still enforces website origin', async t => {
   const handler = createAccountHandler({ uri: '', secure: true, origin: 'https://cnatrainingacademy.org', proxySecret: 'shared-test-secret' });
   const server = createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(async () => { await new Promise(resolve => server.close(resolve)); await handler.closeDatabase(); });
   const base = `http://127.0.0.1:${server.address().port}`;
-  assert.equal((await fetch(base + '/api/me')).status, 403);
-  assert.equal((await fetch(base + '/api/me', { headers: { 'x-academy-proxy-secret': 'wrong' } })).status, 403);
+  assert.equal((await fetch(base + '/api/me')).status, 503);
+  assert.equal((await fetch(base + '/api/me', { headers: { 'x-academy-proxy-secret': 'wrong' } })).status, 503);
   assert.equal((await fetch(base + '/api/me', { headers: { 'x-academy-proxy-secret': 'shared-test-secret' } })).status, 503);
   assert.equal((await fetch(base + '/api/health')).status, 503, 'Health reaches database configuration without proxy credentials');
+  assert.equal((await fetch(base + '/api/login', { method: 'POST', headers: { Origin: 'https://untrusted.example', 'Content-Type': 'application/json' }, body: '{}' })).status, 403);
 });
 
-test('Vercel relay forwards bodies, origins, cookies, and trusted client IPs to Render', async t => {
+test('Vercel relay forwards bodies, origins, and cookies without a shared secret', async t => {
   const received = [];
   let offline = false;
   const server = createServer(async (req, res) => {
@@ -80,8 +81,8 @@ test('Vercel relay forwards bodies, origins, cookies, and trusted client IPs to 
     assert.equal(upstream.url, 'https://example.onrender.com/api/login');
     assert.equal(upstream.headers.origin, 'https://cnatrainingacademy.org');
     assert.equal(upstream.headers.cookie, 'academy_session=existing');
-    assert.equal(upstream.headers['x-academy-client-ip'], '203.0.113.4');
-    assert.equal(upstream.headers['x-academy-proxy-secret'], 'relay-test-secret');
+    assert.equal(upstream.headers['x-academy-client-ip'], undefined);
+    assert.equal(upstream.headers['x-academy-proxy-secret'], undefined);
     assert.equal(JSON.parse(upstream.body.toString()).email, 'student@example.test');
   }
   const before = received.length;

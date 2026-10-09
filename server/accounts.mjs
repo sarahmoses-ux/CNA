@@ -8,7 +8,7 @@ import { createOtpMailer } from './resend.mjs';
 import { createOtpFlow, consumeRateLimit } from './otp.mjs';
 const derive = promisify(scrypt);
 const hashToken = value => createHash('sha256').update(value).digest('hex');
-export function createAccountHandler({ uri = process.env.MONGODB_URI, database = process.env.MONGODB_DB || 'cna_academy', origin = process.env.APP_ORIGIN, secure = process.env.NODE_ENV === 'production', proxySecret = process.env.API_PROXY_SECRET, adminEmails = process.env.ADMIN_EMAILS || '', otpSecret = process.env.OTP_SECRET, sendOtp = createOtpMailer(), now = Date.now, getClientIp = req => (proxySecret ? req.headers['x-academy-client-ip'] : undefined) || req.socket?.remoteAddress || 'unknown' } = {}) {
+export function createAccountHandler({ uri = process.env.MONGODB_URI, database = process.env.MONGODB_DB || 'cna_academy', origin = process.env.APP_ORIGIN, secure = process.env.NODE_ENV === 'production', adminEmails = process.env.ADMIN_EMAILS || '', otpSecret = process.env.OTP_SECRET, sendOtp = createOtpMailer(), now = Date.now, getClientIp = req => req.socket?.remoteAddress || 'unknown' } = {}) {
   if (secure && !origin) throw new Error('APP_ORIGIN is required in production.');
   if (secure && (new URL(origin).origin !== origin || !origin.startsWith('https://'))) throw new Error('APP_ORIGIN must be an exact HTTPS origin without a trailing slash.');
   const staffEmails = adminEmails.split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
@@ -67,10 +67,6 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
       const methods = apiMethods[path];
       if (!methods) return reply(404, { error: 'Not found.' });
       if (!methods.includes(req.method)) { res.setHeader('Allow', methods.join(', ')); return reply(405, { error: 'Method not allowed.' }); }
-      if (proxySecret && path !== '/api/health') {
-        const supplied = req.headers['x-academy-proxy-secret'];
-        if (typeof supplied !== 'string' || !timingSafeEqual(Buffer.from(hashToken(supplied), 'hex'), Buffer.from(hashToken(proxySecret), 'hex'))) return reply(403, { error: 'Request proxy not allowed.' });
-      }
       if (req.method === 'POST') {
         const allowedOrigin = origin || `http://${req.headers.host}`;
         if (req.headers.origin !== allowedOrigin) return reply(403, { error: 'Request origin not allowed.' });
