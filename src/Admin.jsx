@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PageHeading } from './components';
 import { programs } from './data';
@@ -17,6 +17,15 @@ export default function Admin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const editorHeading = useRef(null);
+  const editing = Boolean(draft);
+  const studentId = draft?.id;
+  useEffect(() => {
+    if (editing && window.matchMedia('(max-width: 800px)').matches) {
+      editorHeading.current?.focus({ preventScroll: true });
+      editorHeading.current?.scrollIntoView({ block: 'start' });
+    }
+  }, [editing, studentId]);
   useEffect(() => {
     let active = true;
     request('me').then(async ({ user }) => {
@@ -70,10 +79,10 @@ export default function Admin() {
   if (access !== 'allowed') return <section className="section container"><h1>{access === 'denied' ? 'Administrator access required' : 'Administration'}</h1>{access === 'loading' ? <p role="status">Checking access...</p> : access === 'denied' ? <><p>Your student account cannot access staff records.</p><Link className="text-link" to="/dashboard">Return to your dashboard</Link></> : <><p role="alert">{error}</p><button className="button button-outline" onClick={() => window.location.reload()}>Try again</button></>}</section>;
   return <>
     <PageHeading eyebrow="STAFF ADMINISTRATION" title="Student records." description="Manage student contact details, enrollment, and class schedules." />
-    <section className="section"><div className="container">
+    <section className="section admin-section"><div className="container">
       <div className="admin-toolbar"><button className="button button-primary" disabled={busy} onClick={() => { setDraft({ ...blank }); setError(''); setNotice(''); }}>Add student</button><button className="button button-outline" disabled={busy} onClick={logout}>Sign out</button></div>
       {error && <p role="alert" className="account-error admin-error">{error}</p>}{notice && <p role="status">{notice}</p>}
-      <div className="admin-layout">
+      <div className={`admin-layout${draft ? ' admin-layout-editing' : ''}`}>
         <div className="admin-directory">
           <form className="admin-search" onSubmit={event => { event.preventDefault(); list(query); }}><label htmlFor="student-search">Find a student</label><div><input id="student-search" type="search" value={query} maxLength={100} onChange={event => setQuery(event.target.value)} placeholder="Search name or email" /><button className="button button-outline" disabled={busy}>Search</button></div></form>
           <h2>Students</h2>
@@ -82,7 +91,7 @@ export default function Admin() {
           {nextCursor && <button className="button button-outline" disabled={busy} onClick={() => list(activeQuery, nextCursor)}>Load more students</button>}
         </div>
         <div className="admin-editor">{draft ? <form onSubmit={save} aria-busy={busy}>
-          <div className="admin-editor-heading"><h2>{draft.id ? 'Edit student' : 'New student'}</h2><button type="button" className="text-link" disabled={busy} onClick={() => setDraft(null)}>Close</button></div>
+          <div className="admin-editor-heading"><h2 ref={editorHeading} tabIndex={-1}>{draft.id ? 'Edit student' : 'New student'}</h2><button type="button" className="text-link" disabled={busy} onClick={() => setDraft(null)}>Close</button></div>
           <label>Full name<input value={draft.name} required maxLength={100} disabled={busy} onChange={event => field('name', event.target.value)} /></label>
           <label>Email address<input type="email" value={draft.email} required maxLength={254} readOnly={Boolean(draft.id)} disabled={busy} onChange={event => field('email', event.target.value)} /></label>
           <label>Phone number<input type="tel" value={draft.phone} maxLength={40} disabled={busy} onChange={event => field('phone', event.target.value)} /></label>

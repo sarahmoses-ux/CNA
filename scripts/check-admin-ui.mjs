@@ -29,7 +29,7 @@ await page.route('**/api/**', async route => {
   return reply(200, { students: records.filter(record => `${record.name} ${record.email}`.toLowerCase().includes(search)), nextCursor: null });
 });
 async function layout() {
-  for (const width of [320, 768, 1440]) {
+  for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `No overflow at ${width}px`);
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
@@ -64,6 +64,18 @@ try {
   await page.getByRole('button', { name: 'Save student' }).click();
   await page.getByRole('status').filter({ hasText: 'Student record saved.' }).waitFor();
   assert.equal(records[0].notes, 'Orientation completed.');
+  for (let index = 1; index <= 20; index++) records.push({ ...records[0], id: String(index).padStart(24, '0'), name: `Directory Student ${index}`, email: `directory.${index}@example.test` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await page.getByRole('button', { name: /Browser Student.*browser.student@example.test/ }).click();
+  const editorTitle = page.getByRole('heading', { name: 'Edit student', exact: true });
+  await editorTitle.waitFor();
+  assert.equal(await editorTitle.evaluate(element => element === document.activeElement), true, 'Opening a record focuses the mobile editor');
+  const titleBounds = await editorTitle.boundingBox();
+  assert(titleBounds.y >= 0 && titleBounds.y < 844, 'Mobile editor opens in view even with a long directory');
+  assert(await page.locator('.admin-editor').evaluate(element => element.getBoundingClientRect().top < document.querySelector('.admin-directory').getBoundingClientRect().top), 'Mobile editor precedes the directory');
+  await layout();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByLabel('Find a student').fill('missing-student');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await page.getByText('No student records found.').waitFor();
