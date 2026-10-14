@@ -96,15 +96,19 @@ OTP validation: isolated backend tests cover expiry, failed codes, single use, r
 
 ## Staff administration
 
+sayflux04@gmail.com is the protected superadministrator. Its verified account can add and remove administrator emails from the Administrator access section on /admin. These assignments are stored in MongoDB staff_access and apply immediately, including to existing sessions. Ordinary administrators cannot change staff access or grant superadmin permissions. The superadmin cannot be removed in this interface. ADMIN_EMAILS remains an initial staff list; explicit removals in the database override that list. Adding an email does not create an account or send an email; the staff member registers their account or uses an existing account, then signs in at /admin with password and email OTP.
+
+Student registration and student sign-in forms require a phone number and enrollment date. These are validated by the backend and only persisted after email OTP verification, then linked to the admin student record. Existing students supply missing information at their next sign-in. Existing staff-entered contact details are preserved when linking. Enrollment date is separate from class start/end dates and does not automatically enroll a student or change enrollment status.
+
 Opening /admin while signed out shows a dedicated staff login on that URL. Password and email OTP are required; student accounts cannot open staff records.
 
 To change an existing administrator password, update SEED_ADMIN_PASSWORD in your private local .env, then run npm run reset:admin-password. This explicitly updates only the allowlisted staff account, verifies the saved password hash, and revokes its sessions and pending OTP challenges. Student records and other accounts are preserved. No frontend or backend redeployment is needed for the database password change.
 
 To seed the first staff account, set SEED_ADMIN_PASSWORD privately in your local .env (12–128 characters), ensure ADMIN_EMAILS includes sayflux04@gmail.com, then run npm run seed:admin against the intended MongoDB database. SEED_ADMIN_EMAIL defaults to sayflux04@gmail.com. The seed creates only a missing account, hashes its password, and preserves existing credentials and records when rerun. It does not grant a session or bypass OTP. Do not put the seed password in Vercel or commit it. Existing staff accounts use their existing password.
 
-The /admin page is restricted to verified accounts whose email is in Render's ADMIN_EMAILS setting. Set ADMIN_EMAILS=sayflux04@gmail.com (the included Blueprint already supplies it). More staff addresses can be added as a comma-separated list. This setting is server-only. No client registration field or student record can grant administrator access.
+The /admin page is restricted to verified staff accounts. The superadmin manages additional administrator emails on the page. Render's ADMIN_EMAILS can supply initial staff addresses; database removals take precedence. No client registration field or student record can grant administrator access.
 
-Create an account using sayflux04@gmail.com, verify the email OTP, then sign in with your password and OTP. Authorized staff are redirected to /admin. Existing accounts can sign in normally. If the allowlist is empty, no account has administrator access. Updating the allowlist requires the Render service to restart/redeploy.
+Create or seed the account using sayflux04@gmail.com, then sign in with your password and email OTP. Authorized staff are redirected to /admin. Existing accounts can sign in normally. Changes through Administrator access do not require a redeploy; changes to Render environment variables do.
 
 Staff can create, search, reopen, and update student records with name, email, phone, program, enrollment status, class dates, class schedule, and staff notes. Records are saved in the students collection in MongoDB. Newly verified student accounts are linked automatically; existing verified accounts are included on the first directory load. Manual records do not create login accounts. A student who later verifies the same email is linked to the existing record, preserving staff notes and class assignments. Saved emails cannot be changed in this editor because they identify the linked account.
 

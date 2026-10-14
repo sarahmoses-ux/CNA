@@ -20,7 +20,7 @@ test('MongoDB accounts persist; sessions isolate students and are revoked on log
   let base = `http://127.0.0.1:${server.address().port}`;
   const call = (path, body, cookie, origin = base) => fetch(base + '/api/' + path, { method: body ? 'POST' : 'GET', headers: { ...(body ? { 'Content-Type': 'application/json', Origin: origin } : {}), ...(cookie ? { Cookie: cookie } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   const authenticate = async (path, fields) => {
-    const started = await call(path, fields); assert.equal(started.status, 202); assert.equal(started.headers.get('set-cookie'), null);
+    const started = await call(path, { phone: '405-555-0123', enrollment_date: '2026-10-14', ...fields }); assert.equal(started.status, 202); assert.equal(started.headers.get('set-cookie'), null);
     const { challengeId } = await started.json();
     return call('verify-otp', { challengeId, code: delivered.at(-1).code });
   };

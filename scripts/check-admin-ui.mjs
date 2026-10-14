@@ -10,15 +10,26 @@ const page = await context.newPage();
 const errors = []; page.on('pageerror', error => errors.push(error.message));
 let role = null, calls = 0, unavailable = false;
 const records = [];
+let staff = [{ email: 'sayflux04@gmail.com', role: 'superadmin' }];
 await page.route('**/api/**', async route => {
   const request = route.request(), url = new URL(request.url());
   const reply = (status, value) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
   if (url.pathname === '/api/me') return unavailable ? reply(503, { error: 'The account service is not configured yet.' }) : reply(role ? 200 : 401, role ? { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } } : { error: 'Please sign in.' });
   if (url.pathname === '/api/login') return reply(202, { verificationRequired: true, challengeId: 'b'.repeat(64), resendAfter: 60 });
-  if (url.pathname === '/api/verify-otp') { role = 'admin'; return reply(200, { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } }); }
+  if (url.pathname === '/api/verify-otp') { role = 'superadmin'; return reply(200, { user: { name: 'Staff Test', email: 'sayflux04@gmail.com', role } }); }
   if (url.pathname === '/api/logout') { role = null; return reply(200, { ok: true }); }
   if (url.pathname.startsWith('/api/admin-')) calls++;
-  if (role !== 'admin') return reply(403, { error: 'Administrator access is required.' });
+  if (!['admin', 'superadmin'].includes(role)) return reply(403, { error: 'Administrator access is required.' });
+  if (url.pathname === '/api/admin-access') {
+    if (role !== 'superadmin') return reply(403, { error: 'Superadministrator access is required.' });
+    if (request.method() === 'POST') {
+      const body = request.postDataJSON();
+      staff = staff.filter(person => person.email !== body.email);
+      if (body.action === 'add') staff.push({ email: body.email, role: 'admin' });
+      return reply(200, { ok: true });
+    }
+    return reply(200, { admins: staff });
+  }
   if (request.method() === 'POST') {
     const data = request.postDataJSON();
     const record = { ...data, id: data.id || 'a'.repeat(24), has_account: false };
@@ -55,6 +66,13 @@ try {
   await page.getByRole('button', { name: 'Verify and continue' }).click();
   await page.getByRole('button', { name: 'Add student' }).waitFor();
   assert.equal(new URL(page.url()).pathname, '/admin', 'Staff OTP login opens records on the same route');
+  await page.getByRole('heading', { name: 'Administrator access', exact: true }).waitFor();
+  await page.getByLabel('Administrator email').fill('new.staff@example.test');
+  await page.getByRole('button', { name: 'Add administrator', exact: true }).click();
+  await page.locator('.admin-staff li').filter({ hasText: 'new.staff@example.test' }).waitFor();
+  await layout();
+  await page.getByRole('button', { name: 'Remove access for new.staff@example.test', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Administrator access removed.' }).waitFor();
   role = 'student'; await page.goto(base + '/admin');
   await page.getByRole('heading', { name: 'Administrator access required' }).waitFor();
   await layout();
@@ -64,10 +82,12 @@ try {
   assert.equal(calls, callsBeforeDeniedReload, 'Student UI does not fetch the directory');
   role = 'admin'; await page.reload();
   await page.getByRole('button', { name: 'Add student' }).waitFor();
+  assert.equal(await page.getByRole('heading', { name: 'Administrator access', exact: true }).count(), 0, 'Ordinary administrators do not see staff management');
   await page.getByRole('button', { name: 'Add student' }).click();
   await page.getByLabel('Full name').fill('Browser Student');
   await page.getByLabel('Email address').fill('browser.student@example.test');
   await page.getByLabel('Phone number').fill('405-555-0123');
+  await page.getByLabel('Enrollment date').fill('2026-10-14');
   await page.getByLabel('Program', { exact: true }).selectOption('certified-nurse-aide');
   await page.getByLabel('Enrollment status').selectOption('Enrolled');
   await page.getByLabel('Class start date').fill('2026-11-01');
@@ -80,6 +100,7 @@ try {
   await page.reload();
   await page.getByRole('button', { name: /Browser Student.*browser.student@example.test/ }).click();
   assert.equal(await page.getByLabel('Staff notes').inputValue(), 'Contact before orientation.');
+  assert.equal(await page.getByLabel('Enrollment date').inputValue(), '2026-10-14');
   assert.equal(await page.getByLabel('Email address').getAttribute('readonly'), '');
   await page.getByLabel('Staff notes').fill('Orientation completed.');
   await page.getByRole('button', { name: 'Save student' }).click();

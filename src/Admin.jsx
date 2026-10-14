@@ -6,10 +6,13 @@ import { request } from './accountApi';
 import { AccountForm } from './StudentAccount';
 import './admin.css';
 
-const blank = { name: '', email: '', phone: '', program: '', status: 'Inquiry', start_date: '', end_date: '', class_schedule: '', notes: '' };
+const blank = { name: '', email: '', phone: '', enrollment_date: '', program: '', status: 'Inquiry', start_date: '', end_date: '', class_schedule: '', notes: '' };
 export default function Admin() {
   const [access, setAccess] = useState('loading');
   const [retry, setRetry] = useState(0);
+  const [role, setRole] = useState('');
+  const [admins, setAdmins] = useState([]);
+  const [staffEmail, setStaffEmail] = useState('');
   const [students, setStudents] = useState([]);
   const [draft, setDraft] = useState(null);
   const [query, setQuery] = useState('');
@@ -31,10 +34,12 @@ export default function Admin() {
     let active = true;
     request('me').then(async ({ user }) => {
       if (!active) return;
-      if (user.role !== 'admin') { setAccess('denied'); return; }
+      if (!['admin', 'superadmin'].includes(user.role)) { setAccess('denied'); return; }
+      setRole(user.role);
       setAccess('allowed');
       const data = await request('admin-students');
       if (active) { setStudents(data.students); setNextCursor(data.nextCursor); }
+      if (user.role === 'superadmin') { const staff = await request('admin-access'); if (active) setAdmins(staff.admins); }
     }).catch(failure => {
       if (!active) return;
       if (failure.status === 401) setAccess('signed-out');
@@ -76,6 +81,15 @@ export default function Admin() {
     try { await request('logout', {}); setStudents([]); setDraft(null); setAccess('signed-out'); setBusy(false); }
     catch (failure) { setError(failure.message); setBusy(false); }
   }
+  async function changeStaff(email, action) {
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await request('admin-access', { email, action });
+      const result = await request('admin-access'); setAdmins(result.admins); setStaffEmail('');
+      setNotice(action === 'add' ? 'Administrator access added. They can sign in with their account and email OTP.' : 'Administrator access removed.');
+    } catch (failure) { setError(failure.message); }
+    finally { setBusy(false); }
+  }
   const field = (name, value) => setDraft(previous => ({ ...previous, [name]: value }));
   if (access === 'signed-out') return <AccountForm admin onAuthenticated={() => { setAccess('loading'); setRetry(previous => previous + 1); }} />;
   if (access !== 'allowed') return <section className="section admin-section"><div className="container"><div className="admin-access-card"><p className="eyebrow">STAFF ADMINISTRATION</p><h1>{access === 'denied' ? 'Administrator access required' : access === 'error' ? 'Unable to load administration' : 'Administration'}</h1>{access === 'loading' ? <p role="status">Checking access...</p> : access === 'denied' ? <><p>Your student account cannot access staff records.</p><Link className="button button-primary" to="/dashboard">Return to your dashboard</Link></> : <><p role="alert">{error}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></>}</div></div></section>;
@@ -84,6 +98,7 @@ export default function Admin() {
     <section className="section admin-section"><div className="container">
       <div className="admin-toolbar"><button className="button button-primary" disabled={busy} onClick={() => { setDraft({ ...blank }); setError(''); setNotice(''); }}>Add student</button><button className="button button-outline" disabled={busy} onClick={logout}>Sign out</button></div>
       {error && <p role="alert" className="account-error admin-error">{error}</p>}{notice && <p role="status">{notice}</p>}
+      {role === 'superadmin' && <section className="admin-staff" aria-labelledby="staff-access-heading"><h2 id="staff-access-heading">Administrator access</h2><p>You are the superadmin. Add staff emails to grant access to student records. Staff need their own account and email OTP.</p><form onSubmit={event => { event.preventDefault(); changeStaff(staffEmail, 'add'); }}><label htmlFor="staff-email">Administrator email</label><div className="admin-staff-actions"><input id="staff-email" type="email" required maxLength={254} value={staffEmail} onChange={event => setStaffEmail(event.target.value)} disabled={busy} /><button className="button button-primary" disabled={busy}>Add administrator</button></div></form><ul>{admins.map(person => <li key={person.email}><span>{person.email}<small>{person.role === 'superadmin' ? 'Superadmin' : 'Administrator'}</small></span>{person.role !== 'superadmin' && <button className="button button-outline" disabled={busy} onClick={() => changeStaff(person.email, 'remove')}>Remove access<span className="sr-only"> for {person.email}</span></button>}</li>)}</ul></section>}
       <div className={`admin-layout${draft ? ' admin-layout-editing' : ''}`}>
         <div className="admin-directory">
           <form className="admin-search" onSubmit={event => { event.preventDefault(); list(query); }}><label htmlFor="student-search">Find a student</label><div><input id="student-search" type="search" value={query} maxLength={100} onChange={event => setQuery(event.target.value)} placeholder="Search name or email" /><button className="button button-outline" disabled={busy}>Search</button></div></form>
@@ -97,6 +112,7 @@ export default function Admin() {
           <label>Full name<input value={draft.name} required maxLength={100} disabled={busy} onChange={event => field('name', event.target.value)} /></label>
           <label>Email address<input type="email" value={draft.email} required maxLength={254} readOnly={Boolean(draft.id)} disabled={busy} onChange={event => field('email', event.target.value)} /></label>
           <label>Phone number<input type="tel" value={draft.phone} maxLength={40} disabled={busy} onChange={event => field('phone', event.target.value)} /></label>
+          <label>Enrollment date<input type="date" value={draft.enrollment_date || ''} disabled={busy} onChange={event => field('enrollment_date', event.target.value)} /></label>
           <label><span id="admin-program-label">Program</span><select aria-labelledby="admin-program-label" value={draft.program} disabled={busy} onChange={event => field('program', event.target.value)}><option value="">Select a program</option>{programs.map(program => <option key={program.slug} value={program.slug}>{program.name}</option>)}</select></label>
           <label><span id="admin-status-label">Enrollment status</span><select aria-labelledby="admin-status-label" value={draft.status} disabled={busy} onChange={event => field('status', event.target.value)}>{['Inquiry', 'Applied', 'Enrolled', 'In progress', 'Completed', 'Withdrawn'].map(status => <option key={status}>{status}</option>)}</select></label>
           <div className="admin-date-fields"><label>Class start date<input type="date" value={draft.start_date} disabled={busy} onChange={event => field('start_date', event.target.value)} /></label><label>Class end date<input type="date" value={draft.end_date} min={draft.start_date || undefined} disabled={busy} onChange={event => field('end_date', event.target.value)} /></label></div>

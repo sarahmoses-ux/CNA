@@ -4,4 +4,5 @@ export const apiMethods = {
   '/api/verify-otp': ['POST'], '/api/resend-otp': ['POST'],
   '/api/admin-students': ['GET', 'POST'], '/api/admin-student': ['GET', 'POST'],
   '/api/student-record': ['GET'],
+  '/api/admin-access': ['GET', 'POST'],
 };

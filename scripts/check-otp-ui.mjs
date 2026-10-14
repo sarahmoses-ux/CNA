@@ -42,6 +42,8 @@ try {
   await page.goto(base + '/register'); await layoutChecks();
   await page.getByLabel('Full name', { exact: true }).fill('Browser Test Student');
   await page.getByLabel('Email address').fill('browser@example.test');
+  await page.getByLabel('Phone number').fill('405-555-0123');
+  await page.getByLabel('Enrollment date').fill('2026-10-14');
   await page.getByLabel('Password', { exact: true }).fill('browser-password-123');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
   await page.getByRole('heading', { name: 'Verify your email', exact: true }).waitFor();
@@ -59,6 +61,8 @@ try {
   await page.reload(); await page.getByRole('heading', { name: 'Welcome, Browser Test Student.' }).waitFor();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await page.waitForURL('**/login');
   await page.getByLabel('Email address').fill('browser@example.test');
+  await page.getByLabel('Phone number').fill('405-555-0123');
+  await page.getByLabel('Enrollment date').fill('2026-10-14');
   await page.getByLabel('Password', { exact: true }).fill('incorrect-password');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('alert').filter({ hasText: 'Email or password is incorrect.' }).waitFor();
@@ -68,6 +72,8 @@ try {
   await page.getByRole('button', { name: 'Start again / change email' }).click();
   await page.getByLabel('Email address').waitFor();
   await page.getByLabel('Email address').fill('browser@example.test');
+  await page.getByLabel('Phone number').fill('405-555-0123');
+  await page.getByLabel('Enrollment date').fill('2026-10-14');
   await page.getByLabel('Password', { exact: true }).fill('browser-password-123');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByLabel('Verification code').fill('123456');

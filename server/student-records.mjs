@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { programs } from '../src/data.js';
+import { isStaff } from './staff-access.mjs';
 
 const statuses = ['Inquiry', 'Applied', 'Enrolled', 'In progress', 'Completed', 'Withdrawn'];
 const invalid = message => Object.assign(new Error(message), { status: 400 });
@@ -12,6 +13,8 @@ export function studentFields(body) {
   const email = text(body.email, 254, 'email address').toLowerCase();
   if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw invalid('Enter the student’s name and a valid email address.');
   const phone = text(body.phone ?? '', 40, 'phone number');
+  const enrollment_date = text(body.enrollment_date ?? '', 10, 'enrollment date');
+  if (enrollment_date && (!/^\d{4}-\d{2}-\d{2}$/.test(enrollment_date) || !Number.isFinite(Date.parse(enrollment_date)) || new Date(enrollment_date).toISOString().slice(0, 10) !== enrollment_date)) throw invalid('Use a valid enrollment date.');
   const program = text(body.program ?? '', 100, 'program');
   if (program && !programs.some(item => item.slug === program)) throw invalid('Choose an academy program.');
   const status = body.status ?? 'Inquiry';
@@ -20,11 +23,11 @@ export function studentFields(body) {
   const end_date = text(body.end_date ?? '', 10, 'end date');
   for (const date of [start_date, end_date]) if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0, 10) !== date)) throw invalid('Use a valid class date.');
   if (start_date && end_date && end_date < start_date) throw invalid('The end date must be on or after the start date.');
-  return { name, email, phone, program, status, start_date, end_date, class_schedule: text(body.class_schedule ?? '', 300, 'class schedule'), notes: text(body.notes ?? '', 2000, 'notes') };
+  return { name, email, phone, enrollment_date, program, status, start_date, end_date, class_schedule: text(body.class_schedule ?? '', 300, 'class schedule'), notes: text(body.notes ?? '', 2000, 'notes') };
 }
 export const staffStudent = record => record ? {
   id: record._id.toString(), name: record.name, email: record.email,
-  phone: record.phone || '', program: record.program || '', status: record.status || 'Inquiry',
+  phone: record.phone || '', enrollment_date: record.enrollment_date || '', program: record.program || '', status: record.status || 'Inquiry',
   start_date: record.start_date || '', end_date: record.end_date || '', class_schedule: record.class_schedule || '', notes: record.notes || '',
   has_account: Boolean(record.user_id), created_at: record.created_at, updated_at: record.updated_at,
 } : null;
@@ -34,6 +37,10 @@ export async function linkStudent(students, user, timestamp) {
     $setOnInsert: { name: user.name, email: user.email, status: 'Inquiry', created_at: new Date(timestamp).toISOString() },
     $set: { user_id: user._id, updated_at: new Date(timestamp).toISOString() },
   };
+  // Backfill missing contact details without replacing staff edits on every login.
+  const existing = await students.findOne({ email: user.email });
+  if (user.phone && !existing?.phone) update.$set.phone = user.phone;
+  if (user.enrollment_date && !existing?.enrollment_date) update.$set.enrollment_date = user.enrollment_date;
   try { await students.updateOne({ email: user.email }, update, { upsert: true }); }
   catch (error) {
     if (error.code !== 11000) throw error;
@@ -42,7 +49,7 @@ export async function linkStudent(students, user, timestamp) {
 }
 export async function syncStudentAccounts(students, users, staffEmails, now) {
   let batch = [];
-  for await (const account of users.find({ email: { $nin: staffEmails } }, { projection: { name: 1, email: 1, email_verified_at: 1 } })) {
+  for await (const account of users.find({ email: { $nin: staffEmails } }, { projection: { name: 1, email: 1, email_verified_at: 1, phone: 1, enrollment_date: 1 } })) {
     if (!account.email_verified_at) continue;
     batch.push(linkStudent(students, account, now()));
     if (batch.length === 20) { await Promise.all(batch); batch = []; }
@@ -55,14 +62,14 @@ export async function handleStudentRequest({ req, body, url, user, currentUser, 
     return reply(200, { student: ownStudent(await students.findOne({ email: currentUser.email })) });
   }
   if (!user) return reply(401, { error: 'Please sign in.' });
-  if (user.role !== 'admin') return reply(403, { error: 'Administrator access is required.' });
+  if (!isStaff(user.role)) return reply(403, { error: 'Administrator access is required.' });
   if (url.pathname === '/api/admin-students' && req.method === 'GET') {
     // Migrate older verified accounts once per backend process. New sign-ins link directly.
     await syncAccounts();
     const query = url.searchParams.get('q') || '';
     if (query.length > 100) throw invalid('Use a shorter search.');
     const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const filter = query ? { $or: [{ name: { $regex: escaped, $options: 'i' } }, { email: { $regex: escaped, $options: 'i' } }] } : {};
+    const filter = { email: { $nin: staffEmails }, ...(query ? { $or: [{ name: { $regex: escaped, $options: 'i' } }, { email: { $regex: escaped, $options: 'i' } }] } : {}) };
     const cursor = url.searchParams.get('cursor');
     if (cursor) {
       if (!/^[a-f0-9]{24}$/.test(cursor)) throw invalid('Invalid page cursor.');

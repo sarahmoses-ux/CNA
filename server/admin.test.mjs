@@ -14,7 +14,7 @@ async function setup(t) {
   const base = `http://127.0.0.1:${server.address().port}`;
   const call = (path, body, cookie, origin = base) => fetch(base + '/api/' + path, { method: body ? 'POST' : 'GET', headers: { ...(body ? { Origin: origin, 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   const auth = async (email, extra = {}) => {
-    const started = await call('register', { name: email.split('@')[0], email, password: 'test-student-password', ...extra });
+    const started = await call('register', { name: email.split('@')[0], email, phone: '405-555-0123', enrollment_date: '2026-10-14', password: 'test-student-password', ...extra });
     assert.equal(started.status, 202);
     const pending = await started.json();
     const confirmed = await call('verify-otp', { challengeId: pending.challengeId, code: mail.at(-1).code });
@@ -25,6 +25,51 @@ async function setup(t) {
 }
 const record = { name: 'New Student', email: 'new.student@example.test', phone: '405-555-0123', program: 'certified-nurse-aide', status: 'Enrolled', start_date: '2026-11-01', end_date: '2026-12-01', class_schedule: 'Monday–Friday, 9 AM–1 PM', notes: 'Call before orientation.' };
 
+test('only the superadmin can grant and revoke staff access; existing sessions use current permissions', async t => {
+  const { call, auth, options } = await setup(t);
+  const owner = await auth('sayflux04@gmail.com');
+  const member = await auth('staff@example.test', { role: 'superadmin' });
+  assert.equal(member.user.role, 'student');
+  assert.equal((await call('admin-access')).status, 401);
+  assert.equal((await call('admin-access', { email: 'attacker@example.test', action: 'add' }, member.cookie)).status, 403);
+  assert.equal((await call('admin-access', { email: 'STAFF@example.test', action: 'add' }, owner.cookie)).status, 200);
+  assert.equal((await (await call('me', null, member.cookie)).json()).user.role, 'admin');
+  assert.equal((await call('admin-students', null, member.cookie)).status, 200);
+  assert.equal((await call('admin-access', null, member.cookie)).status, 403);
+  assert.equal((await call('admin-access', { email: 'other@example.test', action: 'add', role: 'superadmin' }, member.cookie)).status, 403);
+  assert.equal((await call('admin-access', { email: 'sayflux04@gmail.com', action: 'remove' }, owner.cookie)).status, 400);
+  assert.equal((await call('admin-access', { email: 'bad', action: 'add' }, owner.cookie)).status, 400);
+  const list = (await (await call('admin-access', null, owner.cookie)).json()).admins;
+  assert.equal(list.find(person => person.email === 'staff@example.test').role, 'admin');
+  assert.equal(list.find(person => person.email === 'sayflux04@gmail.com').role, 'superadmin');
+  // A new handler must read the saved database grant, rather than rely on memory.
+  const reopened = createServer(createAccountHandler(options));
+  await new Promise(resolve => reopened.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => reopened.close(resolve)));
+  const current = await fetch(`http://127.0.0.1:${reopened.address().port}/api/me`, { headers: { Cookie: member.cookie } });
+  assert.equal((await current.json()).user.role, 'admin');
+  assert.equal((await call('admin-access', { email: 'staff@example.test', action: 'remove' }, owner.cookie)).status, 200);
+  assert.equal((await call('admin-students', null, member.cookie)).status, 403);
+});
+
+test('student contact details are validated and linked only after successful OTP verification', async t => {
+  const { auth, call, mongo } = await setup(t);
+  const data = { name: 'Required Fields', email: 'required@example.test', password: 'valid-password-123' };
+  assert.equal((await call('register', data)).status, 400);
+  assert.equal((await call('register', { ...data, phone: 'abcdefg', enrollment_date: '2026-10-14' })).status, 400);
+  assert.equal((await call('register', { ...data, phone: '405-555-0123', enrollment_date: '2026-02-30' })).status, 400);
+  assert.equal(mongo.store('users').size, 0);
+  await auth(data.email, { phone: '+1 405 555 0100', enrollment_date: '2026-11-01' });
+  const student = [...mongo.store('students').values()].find(item => item.email === data.email);
+  assert.equal(student.phone, '+1 405 555 0100');
+  assert.equal(student.enrollment_date, '2026-11-01');
+  // Legacy student accounts must supply the missing fields at sign-in.
+  const legacy = [...mongo.store('users').values()].find(item => item.email === data.email);
+  delete legacy.phone; delete legacy.enrollment_date;
+  assert.equal((await call('login', { email: data.email, password: 'test-student-password' })).status, 400);
+  assert.equal((await call('login', { email: data.email, password: 'test-student-password', phone: '+1 405 555 0100', enrollment_date: '2026-11-01' })).status, 202);
+});
+
 test('admin access requires an OTP session and a server-configured staff email', async t => {
   const { call, auth, mongo } = await setup(t);
   assert.equal((await call('admin-students')).status, 401);
@@ -34,12 +79,14 @@ test('admin access requires an OTP session and a server-configured staff email',
   assert.equal((await call('admin-students', record, student.cookie)).status, 403);
   assert.equal((await call('admin-student', { ...record, id: new ObjectId().toString() }, student.cookie)).status, 403);
   const admin = await auth('sayflux04@gmail.com');
-  assert.equal(admin.user.role, 'admin');
+  assert.equal(admin.user.role, 'superadmin');
   const list = await call('admin-students', null, admin.cookie);
   assert.equal(list.status, 200);
   const data = await list.json();
   assert.equal(data.students.length, 1);
   assert.equal(data.students[0].email, 'student@example.test');
+  assert.equal(data.students[0].phone, '405-555-0123');
+  assert.equal(data.students[0].enrollment_date, '2026-10-14');
   assert.equal(data.students[0].password_hash, undefined);
   assert.equal(data.students[0].salt, undefined);
   assert.equal(data.students[0].user_id, undefined);

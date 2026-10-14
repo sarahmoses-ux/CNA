@@ -35,7 +35,7 @@ async function setup(t) {
   };
   return { mongo, emails, options, call, begin, advance: ms => { clock += ms; }, failMail: () => { mailFails = true; } };
 }
-const student = { name: 'Test Student', email: 'student@example.test', password: 'test-password-at-least-12' };
+const student = { name: 'Test Student', email: 'student@example.test', phone: '405-555-0123', enrollment_date: '2026-10-14', password: 'test-password-at-least-12' };
 const verify = challenge => ({ challengeId: challenge.challengeId, code: challenge.code });
 
 test('registration creates an account and a secure session only after OTP; login requires a new OTP', async t => {

@@ -25,6 +25,17 @@
 .admin-editor-heading button { border:0; background:none; color:#142f3b; font:inherit; cursor:pointer; min-height:44px; padding:10px 12px; }
 .admin-date-fields { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .admin-empty { padding:30px 0; }
+.admin-staff { border:1px solid #819b7e; border-radius:12px; padding:24px; margin-bottom:32px; background:#dbe3ce; color:#173f35; }
+.admin-staff h2 { color:#173f35; margin-top:0; font-size:28px; }
+.admin-staff label { display:block; font-weight:600; margin-bottom:8px; }
+.admin-staff-actions { display:flex; gap:12px; }
+.admin-staff input { flex:1; min-width:0; width:100%; padding:12px; border:1px solid #81959c; border-radius:8px; font:inherit; font-size:16px; background:#fff; color:#173f35; }
+.admin-staff ul { list-style:none; padding:0; margin-bottom:0; }
+.admin-staff li { display:flex; gap:16px; justify-content:space-between; align-items:center; padding:16px 0; border-top:1px solid #a6b89d; }
+.admin-staff li>span { min-width:0; overflow-wrap:anywhere; }
+.admin-staff small { display:block; margin-top:4px; }
+.admin-staff .button-outline { color:#173f35; border-color:#688463; }
+.admin-staff .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .admin-editor-heading h2 { scroll-margin-top:24px; }
 .admin-section button:focus-visible { outline:3px solid #997328; outline-offset:3px; }
 @media(max-width:800px) {
@@ -43,6 +54,8 @@
   .admin-toolbar .button { flex:1; padding:14px 12px; }
 }
 @media(max-width:480px) {
+  .admin-staff { padding:20px 16px; }
+  .admin-staff-actions,.admin-staff li { flex-direction:column; align-items:stretch; }
   .admin-access-card { padding:24px 20px; }
   .admin-access-card .button { width:100%; }
   .admin-search>div { grid-template-columns:minmax(0,1fr); }

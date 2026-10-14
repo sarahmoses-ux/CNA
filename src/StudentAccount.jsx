@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { request } from './accountApi';
 import { Button, PageHeading } from './components';
 import { academyContact, programs } from './data';
+const staffRole = role => role === 'admin' || role === 'superadmin';
 export function AccountForm({ register = false, admin = false, onAuthenticated }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -14,7 +15,7 @@ export function AccountForm({ register = false, admin = false, onAuthenticated }
   useEffect(() => {
     if (admin) return;
     let active = true;
-    request('me').then(({ user }) => { if (active) navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true }); }).catch(() => {});
+    request('me').then(({ user }) => { if (active) navigate(staffRole(user.role) ? '/admin' : '/dashboard', { replace: true }); }).catch(() => {});
     return () => { active = false; };
   }, [navigate, register, admin]);
   useEffect(() => {
@@ -30,11 +31,11 @@ export function AccountForm({ register = false, admin = false, onAuthenticated }
       if (challenge) {
         const { user } = await request('verify-otp', { challengeId: challenge.challengeId, code });
         if (admin) {
-          if (user.role !== 'admin') { await request('logout', {}); startOver(); throw new Error('This account does not have administrator access.'); }
+          if (!staffRole(user.role)) { await request('logout', {}); startOver(); throw new Error('This account does not have administrator access.'); }
           onAuthenticated();
           return;
         }
-        navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
+        navigate(staffRole(user.role) ? '/admin' : '/dashboard', { replace: true });
       } else {
         const fields = Object.fromEntries(new FormData(form));
         const result = await request(register ? 'register' : 'login', fields);
@@ -73,6 +74,7 @@ export function AccountForm({ register = false, admin = false, onAuthenticated }
         </> : <>
           {register && <label>Full name<input name="name" autoComplete="name" required maxLength={100} disabled={busy} /></label>}
           <label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254} disabled={busy} /></label>
+          {!admin && <><label>Phone number<input name="phone" type="tel" autoComplete="tel" required minLength={7} maxLength={40} disabled={busy} /></label><label>Enrollment date<input name="enrollment_date" type="date" required disabled={busy} /></label><p className="small-text">Your contact number and enrollment date will be shared with academy staff.</p></>}
           <label htmlFor="account-password">Password</label>
           <input key="password" id="account-password" name="password" type="password" autoComplete={register ? 'new-password' : 'current-password'} minLength={register ? 12 : 1} maxLength={128} required disabled={busy} aria-describedby={register ? 'password-help' : undefined} />
           {register && <p id="password-help" className="small-text">Use at least 12 characters.</p>}

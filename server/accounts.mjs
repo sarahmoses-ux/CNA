@@ -6,12 +6,14 @@ import { apiMethods } from './api-routes.mjs';
 import { linkStudent, handleStudentRequest, syncStudentAccounts } from './student-records.mjs';
 import { createOtpMailer } from './resend.mjs';
 import { createOtpFlow, consumeRateLimit } from './otp.mjs';
+import { isStaff, staffDirectory, superadminEmail, handleStaffAccess } from './staff-access.mjs';
+import { studentProfile } from './student-profile.mjs';
 const derive = promisify(scrypt);
 const hashToken = value => createHash('sha256').update(value).digest('hex');
 export function createAccountHandler({ uri = process.env.MONGODB_URI, database = process.env.MONGODB_DB || 'cna_academy', origin = process.env.APP_ORIGIN, secure = process.env.NODE_ENV === 'production', adminEmails = process.env.ADMIN_EMAILS || '', otpSecret = process.env.OTP_SECRET, sendOtp = createOtpMailer(), now = Date.now, getClientIp = req => req.socket?.remoteAddress || 'unknown' } = {}) {
   if (secure && !origin) throw new Error('APP_ORIGIN is required in production.');
   if (secure && (new URL(origin).origin !== origin || !origin.startsWith('https://'))) throw new Error('APP_ORIGIN must be an exact HTTPS origin without a trailing slash.');
-  const staffEmails = adminEmails.split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
+  const configuredStaff = adminEmails.split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
   const otp = createOtpFlow({ secret: otpSecret, send: sendOtp, now });
   let client;
   let connecting;
@@ -33,6 +35,7 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
         const rateLimits = db.collection('auth_rate_limits');
         const challenges = db.collection('auth_challenges');
         const students = db.collection('students');
+        const staffAccess = db.collection('staff_access');
         await Promise.all([
           users.createIndex({ email: 1 }, { unique: true }),
           students.createIndex({ email: 1 }, { unique: true }),
@@ -41,7 +44,7 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
           rateLimits.createIndex({ expires: 1 }, { expireAfterSeconds: 0 }),
           challenges.createIndex({ expires: 1 }, { expireAfterSeconds: 0 }),
         ]);
-        return { db, users, sessions, rateLimits, challenges, students };
+        return { db, users, sessions, rateLimits, challenges, students, staffAccess };
       })().catch(async () => {
         connecting = undefined;
         await activeClient.close();
@@ -52,7 +55,7 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
     }
     return connecting;
   }
-  const publicUser = record => record ? { id: record._id.toString(), name: record.name, email: record.email, created_at: record.created_at, email_verified: Boolean(record.email_verified_at), role: staffEmails.includes(record.email) ? 'admin' : 'student' } : null;
+  const publicUser = (record, staffEmails) => record ? { id: record._id.toString(), name: record.name, email: record.email, phone: record.phone || '', enrollment_date: record.enrollment_date || '', created_at: record.created_at, email_verified: Boolean(record.email_verified_at), role: record.email === superadminEmail ? 'superadmin' : staffEmails.includes(record.email) ? 'admin' : 'student' } : null;
   const dummySalt = randomBytes(16).toString('hex');
   const cookie = (token, age) => `academy_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${age}${secure ? '; Secure' : ''}`;
   const handler = async (req, res) => {
@@ -73,12 +76,13 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
         if (!req.headers['content-type']?.startsWith('application/json')) return reply(415, { error: 'Send JSON.' });
       }
       const storage = await collections();
-      const { db, users, sessions, rateLimits, students } = storage;
+      const { db, users, sessions, rateLimits, students, staffAccess } = storage;
       if (path === '/api/health') { otp.configured(); await db.command({ ping: 1 }); return reply(200, { ok: true }); }
+      const staffEmails = await staffDirectory(staffAccess, configuredStaff);
       const token = /(?:^|;\s*)academy_session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie || '')?.[1];
       const currentSession = token ? await sessions.findOne({ _id: hashToken(token), expires: { $gt: new Date(now()) }, otp_verified: true }) : null;
       const currentUser = currentSession ? await users.findOne({ _id: currentSession.user_id }) : null;
-      const user = currentUser?.email_verified_at ? publicUser(currentUser) : null;
+      const user = currentUser?.email_verified_at ? publicUser(currentUser, staffEmails) : null;
       if (path === '/api/me' && req.method === 'GET') return user ? reply(200, { user }) : reply(401, { error: 'Please sign in.' });
       if (path === '/api/logout' && req.method === 'POST') {
         if (token) await sessions.deleteOne({ _id: hashToken(token) });
@@ -92,7 +96,11 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
       const studentRoute = path.startsWith('/api/admin-') || path === '/api/student-record';
       if (studentRoute) {
         if (!user) return reply(401, { error: 'Please sign in.' });
-        if (path.startsWith('/api/admin-') && user.role !== 'admin') return reply(403, { error: 'Administrator access is required.' });
+        if (path.startsWith('/api/admin-') && !isStaff(user.role)) return reply(403, { error: 'Administrator access is required.' });
+        if (path === '/api/admin-access') {
+          if (user.role !== 'superadmin') return reply(403, { error: 'Superadministrator access is required.' });
+          if (req.method === 'GET') return await handleStaffAccess({ user, req, staffAccess, staffEmails, now, reply });
+        }
         if (req.method === 'GET') return await handleStudentRequest({ req, url, user, currentUser, students, users, staffEmails, now, reply, syncAccounts });
       }
       const timestamp = now();
@@ -104,6 +112,7 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
       let body;
       try { body = JSON.parse(raw); } catch { return reply(400, { error: 'Invalid request.' }); }
       if (!body || typeof body !== 'object') return reply(400, { error: 'Invalid request.' });
+      if (path === '/api/admin-access') return await handleStaffAccess({ user, body, req, staffAccess, staffEmails, now, reply });
       if (studentRoute) return await handleStudentRequest({ req, body, url, user, currentUser, students, users, staffEmails, now, reply, syncAccounts });
       if (path === '/api/resend-otp') return reply(202, await otp.resend(storage, body.challengeId));
       if (path === '/api/verify-otp') {
@@ -113,7 +122,7 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
           const record = { ...challenge.pending_user, email_verified_at: new Date(timestamp).toISOString(), created_at: new Date(timestamp).toISOString() };
           try {
             const result = await users.insertOne(record);
-            account = publicUser({ ...record, _id: result.insertedId });
+            account = publicUser({ ...record, _id: result.insertedId }, staffEmails);
           } catch (error) {
             if (error.code === 11000) return reply(409, { error: 'Unable to create this account. Try signing in with your email.' });
             throw error;
@@ -122,10 +131,11 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
           const record = await users.findOne({ _id: challenge.user_id });
           if (!record) return reply(400, { error: 'This account is no longer available. Please start again.' });
           const email_verified_at = new Date(timestamp).toISOString();
-          await users.updateOne({ _id: record._id }, { $set: { email_verified_at } });
-          account = publicUser({ ...record, email_verified_at });
+          const profile = !staffEmails.includes(record.email) ? challenge.profile || {} : {};
+          await users.updateOne({ _id: record._id }, { $set: { email_verified_at, ...profile } });
+          account = publicUser({ ...record, email_verified_at, ...profile }, staffEmails);
         }
-        if (account.role !== 'admin') await linkStudent(students, { _id: new ObjectId(account.id), name: account.name, email: account.email }, timestamp);
+        if (!isStaff(account.role)) await linkStudent(students, { _id: new ObjectId(account.id), name: account.name, email: account.email, phone: account.phone, enrollment_date: account.enrollment_date }, timestamp);
         if (token) await sessions.deleteOne({ _id: hashToken(token) });
         const session = randomBytes(32).toString('hex');
         await sessions.insertOne({ _id: hashToken(session), user_id: new ObjectId(account.id), otp_verified: true, expires: new Date(timestamp + 7 * 24 * 60 * 60 * 1000) });
@@ -142,12 +152,14 @@ export function createAccountHandler({ uri = process.env.MONGODB_URI, database =
         if (await users.findOne({ email })) return reply(409, { error: 'Unable to create this account. Try signing in with your email.' });
         const salt = randomBytes(16).toString('hex');
         const password_hash = (await derive(password, salt, 64)).toString('hex');
-        return reply(202, await otp.begin(storage, { purpose: 'register', email, pending_user: { name, email, salt, password_hash } }));
+        const profile = !staffEmails.includes(email) ? studentProfile(body) : {};
+        return reply(202, await otp.begin(storage, { purpose: 'register', email, pending_user: { name, email, salt, password_hash, ...profile } }));
       }
       const record = await users.findOne({ email });
       const candidate = await derive(password, record?.salt || dummySalt, 64);
       if (!record || !timingSafeEqual(candidate, Buffer.from(record.password_hash, 'hex'))) return reply(401, { error: 'Email or password is incorrect.' });
-      return reply(202, await otp.begin(storage, { purpose: 'login', email, user_id: record._id }));
+      const profile = !staffEmails.includes(email) ? studentProfile({ phone: body.phone ?? record.phone, enrollment_date: body.enrollment_date ?? record.enrollment_date }) : {};
+      return reply(202, await otp.begin(storage, { purpose: 'login', email, user_id: record._id, profile }));
     } catch (error) { if (!error.status || error.status >= 500) console.error('Account request failed:', error.name); if (!res.headersSent) { if (error.retryAfter) res.setHeader('Retry-After', String(error.retryAfter)); reply(error.status || 500, { error: error.status ? error.message : 'Unable to complete this request. Please try again.' }); } }
   };
   handler.closeDatabase = async () => { await connecting?.catch(() => {}); await client?.close(); };
