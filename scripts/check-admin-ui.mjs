@@ -97,6 +97,10 @@ try {
   await layout();
   await page.getByRole('button', { name: 'Save student' }).click();
   await page.getByRole('status').filter({ hasText: 'Student record saved.' }).waitFor();
+  const savedCard = page.locator('.admin-students button').filter({ hasText: 'browser.student@example.test' });
+  assert.match(await savedCard.innerText(), /Phone: 405-555-0123/);
+  assert.match(await savedCard.innerText(), /Enrollment date: 2026-10-14/);
+  assert.match(await savedCard.innerText(), /Class dates: 2026-11-01 to 2026-12-01/);
   await page.reload();
   await page.getByRole('button', { name: /Browser Student.*browser.student@example.test/ }).click();
   assert.equal(await page.getByLabel('Staff notes').inputValue(), 'Contact before orientation.');
